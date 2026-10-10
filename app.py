@@ -353,7 +353,7 @@ elif menu_opcion == "📚 5. Biblioteca Normativa":
 
     with tab_n2:
         st.markdown("### 🚰 Código Técnico de la Edificación (CTE DB-HS4/HS5)")
-        st.write("• **Caudales Mínimos:** Lavabo: 0.10 L/s | Ducha: 0.20 L/s | Fregadero: 0.20 L/s.")
+        st.write("• **Caudal Mínimo:** Lavabo: 0.10 L/s | Ducha: 0.20 L/s | Fregadero: 0.20 L/s.")
         st.write("• **Presión de Servicio:** Mínima 1 bar, máxima 5 bar.")
 
     with tab_n3:
@@ -363,4 +363,3 @@ elif menu_opcion == "📚 5. Biblioteca Normativa":
     with tab_n4:
         st.markdown("### 📡 Infraestructuras de Telecomunicaciones (ICT2)")
         st.write("• **Redes:** Par trenzado Cat6, Fibra Óptica (FTTH) y Coaxial. Instalación de PAU centralizado.")
-""",TargetFile:
