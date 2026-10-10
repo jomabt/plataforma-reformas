@@ -1,460 +1,548 @@
 import streamlit as st
 import pandas as pd
+import math
 import io
 
-# Configuración de página con estética de Manual Técnico Normativo (RITE / REBT / CTE)
+# -----------------------------------------------------------------------------
+# CONFIGURACIÓN DE PÁGINA
+# -----------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Gestor Técnico de Reformas e Instalaciones",
-    page_icon="📘",
+    page_title="PRO-REFORMAS | Software de Cálculo Técnico y Presupuestos",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Estilos CSS con paleta mejorada: Azul Profundo (#0F2C59) + Amarillo Energía (#FFC107)
+# -----------------------------------------------------------------------------
+# ESTILOS CSS CON LA PALETA OFICIAL EXIGIDA
+# Azul Profundo: #0F2C59 | Azul Eléctrico: #007BFF | Amarillo Energía: #FFC107
+# Gris Oscuro: #212529 | Blanco Fondo: #F8F9FA
+# -----------------------------------------------------------------------------
 st.markdown("""
 <style>
-    .main {
+    /* Fondo General de la App */
+    .stApp {
         background-color: #F8F9FA !important;
     }
     
-    /* Header principal con fuente de título aumentada en 2 puntos */
-    .header-rite {
-        background: linear-gradient(135deg, #0F2C59 0%, #007BFF 100%);
-        padding: 1.5rem 2rem;
-        border-radius: 10px;
-        color: white;
-        margin-bottom: 1.5rem;
-        border-left: 8px solid #FFC107;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-    .header-title {
-        font-size: 2.3rem !important; /* Aumentado 2 puntos (era 2.1rem) */
-        font-weight: 800 !important;
-        color: #FFFFFF !important;
-        margin: 0;
-        letter-spacing: -0.5px;
-    }
-    .header-subtitle {
-        color: #E2E8F0 !important;
-        font-size: 1.1rem !important; /* Aumentado 2 puntos */
-        margin-top: 0.3rem;
-    }
-    .header-badge {
-        background-color: #FFC107;
-        color: #212529 !important;
-        padding: 0.35rem 0.9rem;
-        border-radius: 6px;
-        font-weight: 800;
-        font-size: 0.95rem !important; /* Aumentado 2 puntos */
-        display: inline-block;
-        margin-top: 0.6rem;
-    }
-
-    /* Fuentes de títulos aumentadas en 2 puntos en toda la app */
-    h1, .stMarkdown h1 { font-size: 2.3rem !important; color: #0F2C59 !important; font-weight: 800 !important; }
-    h2, .stMarkdown h2 { font-size: 1.85rem !important; color: #0F2C59 !important; font-weight: 800 !important; }
-    h3, .stMarkdown h3 { font-size: 1.55rem !important; color: #0F2C59 !important; font-weight: 800 !important; }
-    h4, .stMarkdown h4 { font-size: 1.25rem !important; color: #0F2C59 !important; font-weight: 800 !important; }
-
-    /* MENU IZQUIERDO (SIDEBAR): Fondo Azul Profundo */
+    /* BARRA LATERAL (SIDEBAR) - Fondo Azul Profundo */
     section[data-testid="stSidebar"] {
         background-color: #0F2C59 !important;
     }
+    
+    /* Textos y Títulos de la Sidebar */
     section[data-testid="stSidebar"] h1, 
     section[data-testid="stSidebar"] h2, 
     section[data-testid="stSidebar"] h3, 
-    section[data-testid="stSidebar"] h4,
-    section[data-testid="stSidebar"] p,
-    section[data-testid="stSidebar"] span,
-    section[data-testid="stSidebar"] label,
-    section[data-testid="stSidebar"] .stWidgetLabel {
-        color: #FFFFFF !important;
-        font-weight: 700 !important;
-        font-size: 1.05rem !important; /* Aumentado 2pt */
+    section[data-testid="stSidebar"] h4, 
+    section[data-testid="stSidebar"] p, 
+    section[data-testid="stSidebar"] span, 
+    section[data-testid="stSidebar"] div {
+        color: #F8F9FA !important;
     }
     
-    /* CAMBIO CLAVE: Color de fondo de los cuadros del menú izquierdo (Nombre, Dirección, IVA) */
-    section[data-testid="stSidebar"] input,
-    section[data-testid="stSidebar"] div[data-baseweb="input"] input,
-    section[data-testid="stSidebar"] div[data-baseweb="input"],
-    section[data-testid="stSidebar"] div[data-baseweb="select"] > div,
-    section[data-testid="stSidebar"] div[role="combobox"] {
+    /* Etiquetas (labels) de los inputs en Sidebar */
+    section[data-testid="stSidebar"] label {
+        color: #F8F9FA !important;
+        font-weight: 700 !important;
+        font-size: 1.05rem !important;
+    }
+    
+    /* CUADROS DEL MENÚ IZQUIERDO (Nombre, Dirección, IVA) - Fondo Blanco, Borde Amarillo */
+    section[data-testid="stSidebar"] input, 
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
         background-color: #FFFFFF !important;
-        color: #0F172A !important;
+        color: #212529 !important;
         border: 2px solid #FFC107 !important;
         border-radius: 6px !important;
         font-weight: 700 !important;
         font-size: 1.0rem !important;
     }
     
-    section[data-testid="stSidebar"] div[data-baseweb="select"] span,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] div {
-        color: #0F172A !important;
-        font-weight: 700 !important;
-    }
-
-    /* Tarjetas de producto */
-    .card-product {
-        background-color: #FFFFFF !important;
-        border: 2px solid #E2E8F0 !important;
-        border-top: 5px solid #0F2C59 !important;
+    /* ENCABEZADO PRINCIPAL (SaaS Header) */
+    .saas-header {
+        background-color: #0F2C59;
+        border-left: 8px solid #FFC107;
+        padding: 1.8rem 2.2rem;
         border-radius: 10px;
-        padding: 1.2rem;
-        margin-bottom: 1rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
+        color: #F8F9FA;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 10px rgba(15, 44, 89, 0.15);
     }
-    .price-tag {
-        font-size: 1.55rem !important;
+    .saas-title {
+        font-size: 2.5rem !important; /* +4 puntos de aumento */
         font-weight: 800 !important;
-        color: #0F2C59 !important;
+        color: #FFFFFF !important;
+        margin: 0;
+        letter-spacing: -0.5px;
     }
-    .unit-tag {
-        font-size: 0.9rem !important;
-        color: #475569 !important;
+    .saas-subtitle {
+        color: #007BFF !important; /* Azul Eléctrico */
+        font-size: 1.2rem !important;
+        font-weight: 600 !important;
+        margin-top: 0.4rem;
+    }
+    
+    /* AUMENTO DE FUENTE DE TÍTULOS EN EL CUERPO (+4 PUNTOS) */
+    h1, .stHeader h1 {
+        font-size: 2.6rem !important;
+        color: #0F2C59 !important;
+        font-weight: 800 !important;
+    }
+    h2, .stHeader h2, stSubheader {
+        font-size: 2.0rem !important;
+        color: #0F2C59 !important;
+        font-weight: 800 !important;
+        border-bottom: 3px solid #007BFF;
+        padding-bottom: 0.4rem;
+        margin-top: 1.2rem !important;
+    }
+    h3, h4 {
+        font-size: 1.5rem !important;
+        color: #007BFF !important; /* Subtítulos en Azul Eléctrico */
         font-weight: 700 !important;
     }
-
-    /* Botones de incremento y decremento (+ y -) en Amarillo Energía */
-    div[data-testid="stNumberInput"] button,
-    button[aria-label="Decrease value"],
-    button[aria-label="Increase value"] {
-        background-color: #FFC107 !important;
+    
+    /* TEXTO PRINCIPAL */
+    p, span, label, div {
+        color: #212529 !important; /* Gris Oscuro */
+    }
+    
+    /* CUADROS DE CANTIDADES E INPUTS DE ESTANCIAS EN EL CUERPO PRINCIPAL */
+    div[data-testid="stNumberInput"] input {
+        background-color: #FFFFFF !important;
+        color: #212529 !important;
+        border: 2px solid #007BFF !important;
+        border-radius: 6px !important;
+        font-weight: 800 !important;
+        font-size: 1.15rem !important;
+        text-align: center !important;
+    }
+    
+    /* BOTONES DE MÁS Y MENOS (+) Y (-) DE LAS CANTIDADES */
+    div[data-testid="stNumberInput"] button {
+        background-color: #FFC107 !important; /* Amarillo Energía */
         color: #212529 !important;
         border: 1px solid #D39E00 !important;
         font-weight: 900 !important;
         border-radius: 4px !important;
     }
-    div[data-testid="stNumberInput"] button:hover,
-    button[aria-label="Decrease value"]:hover,
-    button[aria-label="Increase value"]:hover {
+    div[data-testid="stNumberInput"] button:hover {
         background-color: #E0A800 !important;
         color: #000000 !important;
     }
     
-    /* Cuadros de número/cantidad */
-    div[data-testid="stNumberInput"] input {
-        background-color: #FFFFFF !important;
-        color: #0F172A !important;
-        border: 2px solid #007BFF !important;
-        font-weight: 800 !important;
-    }
-
-    /* Botones de Acción principales */
-    .stButton>button {
+    /* BOTONES DE NAVEGACIÓN Y ACCIÓN (CTA) - Amarillo Energía */
+    .stButton > button {
         background-color: #FFC107 !important;
         color: #212529 !important;
         font-weight: 800 !important;
+        font-size: 1.05rem !important;
         border: none !important;
-        border-radius: 6px !important;
-        padding: 0.6rem 1rem !important;
-        width: 100% !important;
-        font-size: 1.0rem !important;
+        border-radius: 8px !important;
+        padding: 0.65rem 1.2rem !important;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.1) !important;
+        transition: all 0.2s ease !important;
     }
-    .stButton>button:hover {
+    .stButton > button:hover {
         background-color: #E0A800 !important;
         color: #000000 !important;
+        transform: translateY(-1px);
+    }
+    
+    /* TARJETAS DE MÓDULOS / CONTENEDORES */
+    .card-box {
+        background-color: #FFFFFF;
+        border: 2px solid #007BFF;
+        border-radius: 8px;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Inicialización de estado de sesión
-if 'cesta' not in st.session_state:
-    st.session_state.cesta = {}
+# -----------------------------------------------------------------------------
+# ESTADO DE SESIÓN (PERSISTENCIA Y NAVEGACIÓN PASO A PASO)
+# -----------------------------------------------------------------------------
+if 'paso_actual' not in st.session_state: st.session_state.paso_actual = 1
 
-if 'cliente_nombre' not in st.session_state:
-    st.session_state.cliente_nombre = ""
+if 'cliente_nombre' not in st.session_state: st.session_state.cliente_nombre = ""
+if 'cliente_obra' not in st.session_state: st.session_state.cliente_obra = ""
+if 'superficie' not in st.session_state: st.session_state.superficie = 0.0
 
-if 'cliente_obra' not in st.session_state:
-    st.session_state.cliente_obra = ""
+# Cantidad de estancias (8 Tipos Completos)
+if 'n_dormitorios' not in st.session_state: st.session_state.n_dormitorios = 0
+if 'n_salones' not in st.session_state: st.session_state.n_salones = 0
+if 'n_banos' not in st.session_state: st.session_state.n_banos = 0
+if 'n_aseos' not in st.session_state: st.session_state.n_aseos = 0
+if 'n_cocinas' not in st.session_state: st.session_state.n_cocinas = 0
+if 'n_galerias' not in st.session_state: st.session_state.n_galerias = 0
+if 'n_terrazas' not in st.session_state: st.session_state.n_terrazas = 0
+if 'n_trasteros' not in st.session_state: st.session_state.n_trasteros = 0
 
-# Encabezado principal estilo Manual Técnico RITE/REBT
+# Toggles de Alcance por Especialidad
+if 'inc_elec' not in st.session_state: st.session_state.inc_elec = True
+if 'inc_font' not in st.session_state: st.session_state.inc_font = True
+if 'inc_clima' not in st.session_state: st.session_state.inc_clima = False
+if 'inc_teleco' not in st.session_state: st.session_state.inc_teleco = False
+if 'inc_albanil' not in st.session_state: st.session_state.inc_albanil = False
+
+# Precios Unitarios (€0 por defecto)
+if 'pu_elec_m2' not in st.session_state: st.session_state.pu_elec_m2 = 0.0
+if 'pu_elec_cgmp' not in st.session_state: st.session_state.pu_elec_cgmp = 0.0
+if 'pu_font_bano' not in st.session_state: st.session_state.pu_font_bano = 0.0
+if 'pu_font_cocina' not in st.session_state: st.session_state.pu_font_cocina = 0.0
+if 'pu_clima_kw' not in st.session_state: st.session_state.pu_clima_kw = 0.0
+if 'pu_teleco_toma' not in st.session_state: st.session_state.pu_teleco_toma = 0.0
+if 'pu_albanil_m2' not in st.session_state: st.session_state.pu_albanil_m2 = 0.0
+
+# -----------------------------------------------------------------------------
+# ENCABEZADO SAAS PRINCIPAL
+# -----------------------------------------------------------------------------
 st.markdown("""
-<div class="header-rite">
-    <div class="header-title">📘 ALMACÉN TÉCNICO & SERVICIOS NORMATIVOS</div>
-    <div class="header-subtitle">Presupuestador Guiado según Reglamento RITE, REBT, CTE DB-HS e ICT2</div>
-    <div class="header-badge">EDICIÓN TÉCNICA PROFESIONAL 2026</div>
+<div class="saas-header">
+    <div class="saas-title">⚡ PRO-REFORMAS | Software de Cálculo Técnico y Presupuestos</div>
+    <div class="saas-subtitle">Plataforma SaaS profesional para dimensionado normativo (REBT, CTE, RITE, ICT2) y medición de obras.</div>
 </div>
 """, unsafe_allow_html=True)
 
-# Barra lateral: Cesta y configuración de facturación
-st.sidebar.markdown("## 🛒 Presupuesto Activo")
+# -----------------------------------------------------------------------------
+# BARRA LATERAL (MENU IZQUIERDO EN AZUL PROFUNDO CON CUADROS BLANCOS/AMARILLOS)
+# -----------------------------------------------------------------------------
+st.sidebar.markdown("## 👤 DATOS DEL CLIENTE Y OBRA")
 
 st.session_state.cliente_nombre = st.sidebar.text_input(
-    "Cliente / Empresa:", 
-    value=st.session_state.cliente_nombre, 
-    placeholder="Ej. Juan Pérez / Reforma C/ Mayor"
-)
-st.session_state.cliente_obra = st.sidebar.text_input(
-    "Dirección de la Obra:", 
-    value=st.session_state.cliente_obra, 
-    placeholder="Ej. Castelldefels, Barcelona"
+    "📌 Nombre del Cliente / Empresa:",
+    value=st.session_state.cliente_nombre,
+    placeholder="Ej. Juan Pérez / D. Antonio López"
 )
 
+st.session_state.cliente_obra = st.sidebar.text_input(
+    "📍 Dirección / Ubicación de la Obra:",
+    value=st.session_state.cliente_obra,
+    placeholder="Ej. Av. Constitución 45, Castelldefels"
+)
+
+st.session_state.superficie = st.sidebar.number_input(
+    "📐 Superficie Útil Afectada (m²):",
+    min_value=0.0,
+    value=st.session_state.superficie,
+    step=5.0
+)
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("## 🔧 ESPECIALIDADES A INCLUIR")
+st.session_state.inc_elec = st.sidebar.checkbox("⚡ Capítulo 1: Electricidad (REBT)", value=st.session_state.inc_elec)
+st.session_state.inc_font = st.sidebar.checkbox("🚰 Capítulo 2: Fontanería (CTE DB-HS)", value=st.session_state.inc_font)
+st.session_state.inc_clima = st.sidebar.checkbox("❄️ Capítulo 3: Climatización (RITE)", value=st.session_state.inc_clima)
+st.session_state.inc_teleco = st.sidebar.checkbox("📡 Capítulo 4: Telecomunicaciones (ICT2)", value=st.session_state.inc_teleco)
+st.session_state.inc_albanil = st.sidebar.checkbox("🏗️ Capítulo 5: Albañilería Auxiliar", value=st.session_state.inc_albanil)
+
+st.sidebar.markdown("---")
 tipo_iva = st.sidebar.selectbox(
-    "Tipo de IVA Aplicable:",
+    "🏷️ Tipo de IVA Aplicable:",
     [21, 10, 0],
     format_func=lambda x: f"{x}% ({'General' if x==21 else 'Reducido Reforma' if x==10 else 'Exento'})"
 )
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 📋 Partidas Seleccionadas")
+# -----------------------------------------------------------------------------
+# BOTONES DE NAVEGACIÓN SUPERIORES (PASO 1 A 5)
+# -----------------------------------------------------------------------------
+c_nav1, c_nav2, c_nav3, c_nav4, c_nav5 = st.columns(5)
 
-if not st.session_state.cesta:
-    st.sidebar.info("La cesta está vacía. Selecciona partidas o materiales en las pestañas principales.")
-else:
-    subtotal_cesta = 0.0
-    
-    for item_id, datos in list(st.session_state.cesta.items()):
-        cant = datos['cantidad']
-        pu = datos['precio_unitario']
-        imp = cant * pu
-        subtotal_cesta += imp
-        
-        st.sidebar.markdown(f"**{datos['nombre']}**")
-        col_c1, col_c2 = st.sidebar.columns(2)  # CORREGIDO: st.sidebar.columns(2) para evitar TypeError
-        with col_c1:
-            st.caption(f"{cant:.1f} {datos['unidad']} x {pu:.2f} € = **{imp:.2f} €**")
-        with col_c2:
-            if st.button("🗑️", key=f"del_{item_id}"):
-                del st.session_state.cesta[item_id]
-                st.rerun()
-        st.sidebar.markdown("---")
-    
-    iva_calc = subtotal_cesta * (tipo_iva / 100)
-    total_calc = subtotal_cesta + iva_calc
-    
-    st.sidebar.metric("Subtotal Base", f"{subtotal_cesta:,.2f} €")
-    st.sidebar.metric(f"IVA ({tipo_iva}%)", f"{iva_calc:,.2f} €")
-    st.sidebar.metric("TOTAL PRESUPUESTO", f"{total_calc:,.2f} €")
-    
-    if st.sidebar.button("🧹 Vaciar Presupuesto"):
-        st.session_state.cesta = {}
+with c_nav1:
+    if st.button("📋 1. Estancias", key="top_p1"):
+        st.session_state.paso_actual = 1
         st.rerun()
 
-# Base de datos de partidas y materiales
-productos_db = {
-    "elec": [
-        {
-            "id": "e1", 
-            "nombre": "⚡ Renovación Eléctrica General (REBT)", 
-            "unidad": "m²", 
-            "precio": 35.00, 
-            "desc": "Cableado libre de halógenos (H07Z1-K), canalización y mecanismos según ITC-BT-25."
-        },
-        {
-            "id": "e2", 
-            "nombre": "🎛️ Cuadro General de Mando (CGMP)", 
-            "unidad": "ud", 
-            "precio": 380.00, 
-            "desc": "Cuadro empotrado con IGA, protector de sobretensiones, diferencial 40A/30mA y PIAs C1-C5."
-        },
-        {
-            "id": "e3", 
-            "nombre": "💡 Punto de Luz / Toma Adicional", 
-            "unidad": "ud", 
-            "precio": 45.00, 
-            "desc": "Apertura de rozas, tubo corrugado, conductor 2.5mm² y caja de mecanismo instalada."
-        }
-    ],
-    "font": [
-        {
-            "id": "f1", 
-            "nombre": "🚿 Instalación Fontanería Baño (CTE DB-HS4/HS5)", 
-            "unidad": "baño", 
-            "precio": 850.00, 
-            "desc": "Red de distribución Multicapa/PEX para agua fría/caliente y desagües de PVC."
-        },
-        {
-            "id": "f2", 
-            "nombre": "🚰 Instalación Fontanería Cocina", 
-            "unidad": "cocina", 
-            "precio": 620.00, 
-            "desc": "Tomas de agua y desagües para fregadero, lavavajillas y lavadora con llaves de escuadra."
-        },
-        {
-            "id": "f3", 
-            "nombre": "🛁 Cambio de Bañera por Plato de Ducha", 
-            "unidad": "ud", 
-            "precio": 790.00, 
-            "desc": "Demolición, plato de resina antideslizante, válvula de gran caudal, grifería y sellado."
-        }
-    ],
-    "clima": [
-        {
-            "id": "c1", 
-            "nombre": "❄️ Equipo Aire Acondicionado Split RITE", 
-            "unidad": "ud", 
-            "precio": 690.00, 
-            "desc": "Split Inverter 3000 frig/h A++ con instalación frigorífica y línea de condensados."
-        },
-        {
-            "id": "c2", 
-            "nombre": "🌀 Climatización por Conductos RITE", 
-            "unidad": "kW", 
-            "precio": 320.00, 
-            "desc": "Red de conductos Climaver, rejillas de impulsión/retorno y zonificación térmica."
-        },
-        {
-            "id": "c3", 
-            "nombre": "🔥 Termo Eléctrico 80L Carga Rápida", 
-            "unidad": "ud", 
-            "precio": 310.00, 
-            "desc": "Termo mural con válvula de seguridad, latiguillos e instalación de fontanería."
-        }
-    ],
-    "obras": [
-        {
-            "id": "o1", 
-            "nombre": "🧱 Ayuda de Albañilería y Rozas", 
-            "unidad": "m²", 
-            "precio": 18.00, 
-            "desc": "Apertura de canalizaciones, recebado con mortero de agarre y tendido de yeso."
-        },
-        {
-            "id": "o2", 
-            "nombre": "🔲 Alicatado y Solado Cerámico", 
-            "unidad": "m²", 
-            "precio": 38.00, 
-            "desc": "Colocación de gres/azulejo con cemento cola C2TE y rejuntado antimoho."
-        },
-        {
-            "id": "o3", 
-            "nombre": "🎨 Pintura Plástica Lavable", 
-            "unidad": "m²", 
-            "precio": 12.00, 
-            "desc": "Preparación de paramentos, imprimación fijadora y dos manos de pintura plástica."
-        }
-    ],
-    "packs": [
-        {
-            "id": "p1", 
-            "nombre": "📦 Pack Reforma Eléctrica Integral 80m²", 
-            "unidad": "pack", 
-            "precio": 2950.00, 
-            "desc": "Cuadro CGMP + 5 Circuitos REBT + 35 Puntos de luz/enchufes + Boletín Certificado."
-        },
-        {
-            "id": "p2", 
-            "nombre": "📦 Pack Reforma Integral Baño Completo", 
-            "unidad": "pack", 
-            "precio": 3200.00, 
-            "desc": "Fontanería CTE + Electricidad + Alicatado + Sanitarios + Ducha + Grifería."
-        }
-    ]
-}
+with c_nav2:
+    if st.button("🛠️ 2. Cálculos", key="top_p2"):
+        st.session_state.paso_actual = 2
+        st.rerun()
 
-def render_categoria(lista_prods):
-    cols = st.columns(3)
-    for idx, prod in enumerate(lista_prods):
-        with cols[idx % 3]:
-            st.markdown(f"""
-            <div class="card-product">
-                <h4 style="margin:0 0 0.4rem 0; color:#0F2C59; font-size:1.25rem;">{prod['nombre']}</h4>
-                <p style="font-size:0.95rem; color:#475569; min-height:48px; margin-bottom:0.8rem; line-height:1.3;">{prod['desc']}</p>
-                <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.8rem;">
-                    <span class="price-tag">{prod['precio']:.2f} €</span>
-                    <span class="unit-tag">por {prod['unidad']}</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            cant = st.number_input(f"Cantidad ({prod['unidad']})", min_value=1.0, value=1.0, step=1.0, key=f"cant_{prod['id']}")
-            pu_custom = st.number_input(f"Precio Unitario (€)", min_value=0.0, value=float(prod['precio']), step=5.0, key=f"pu_{prod['id']}")
-            
-            if st.button(f"🛒 Añadir al Presupuesto", key=f"btn_{prod['id']}"):
-                st.session_state.cesta[prod['id']] = {
-                    "nombre": prod['nombre'],
-                    "unidad": prod['unidad'],
-                    "cantidad": cant,
-                    "precio_unitario": pu_custom
-                }
-                st.success(f"Añadido: {cant:.1f} {prod['unidad']} de {prod['nombre']}")
-                st.rerun()
+with c_nav3:
+    if st.button("💶 3. Tarifas (€0)", key="top_p3"):
+        st.session_state.paso_actual = 3
+        st.rerun()
 
-# Pestañas del Catálogo Técnico
-cat_elec, cat_font, cat_clima, cat_obras, cat_packs = st.tabs([
-    "⚡ Electricidad (REBT)",
-    "🚰 Fontanería (CTE)",
-    "❄️ Climatización (RITE)",
-    "🏗️ Albañilería y Acabados",
-    "📦 Packs Llave en Mano"
-])
+with c_nav4:
+    if st.button("📊 4. Presupuesto", key="top_p4"):
+        st.session_state.paso_actual = 4
+        st.rerun()
 
-with cat_elec:
-    st.subheader("⚡ Catálogo de Instalaciones Eléctricas (REBT - RD 842/2002)")
-    render_categoria(productos_db["elec"])
+with c_nav5:
+    if st.button("📚 5. Biblioteca", key="top_p5"):
+        st.session_state.paso_actual = 5
+        st.rerun()
 
-with cat_font:
-    st.subheader("🚰 Catálogo de Fontanería y Saneamiento (CTE DB-HS4 / DB-HS5)")
-    render_categoria(productos_db["font"])
-
-with cat_clima:
-    st.subheader("❄️ Catálogo de Climatización, Calefacción y ACS (RITE - RD 1027/2007)")
-    render_categoria(productos_db["clima"])
-
-with cat_obras:
-    st.subheader("🏗️ Ayuda de Albañilería, Rozas y Remates")
-    render_categoria(productos_db["obras"])
-
-with cat_packs:
-    st.subheader("📦 Packs de Reforma Completa")
-    render_categoria(productos_db["packs"])
-
-# Tabla resumen y exportación a Excel
 st.markdown("---")
-st.subheader("📊 Resumen General del Presupuesto")
 
-if st.session_state.cesta:
-    filas_pres = []
-    for item_id, d in st.session_state.cesta.items():
-        filas_pres.append({
-            "Partida / Material": d['nombre'],
-            "Unidad": d['unidad'],
-            "Cantidad": d['cantidad'],
-            "Precio Unitario (€)": d['precio_unitario'],
-            "Importe (€)": d['cantidad'] * d['precio_unitario']
-        })
-    
-    df_pres = pd.DataFrame(filas_pres)
-    
-    st.dataframe(
-        df_pres.style.format({
-            "Cantidad": "{:.1f}",
-            "Precio Unitario (€)": "{:.2f} €",
-            "Importe (€)": "{:.2f} €"
-        }),
-        use_container_width=True
+# -----------------------------------------------------------------------------
+# PASO 1: CONFIGURACIÓN DE ESTANCIAS Y GEOMETRÍA
+# -----------------------------------------------------------------------------
+if st.session_state.paso_actual == 1:
+    st.subheader("📋 Paso 1: Configuración de Estancias y Geometría")
+    st.write("Indica el número de estancias para dimensionar automáticamente las necesidades mínimas según normativa.")
+
+    col_e1, col_e2, col_e3, col_e4 = st.columns(4)
+
+    with col_e1:
+        st.session_state.n_dormitorios = st.number_input("🛌 Dormitorios", min_value=0, value=st.session_state.n_dormitorios, step=1, key="input_dorm")
+        st.session_state.n_salones = st.number_input("🛋️ Salones / Comedores", min_value=0, value=st.session_state.n_salones, step=1, key="input_salones")
+
+    with col_e2:
+        st.session_state.n_banos = st.number_input("🛁 Baños Completos", min_value=0, value=st.session_state.n_banos, step=1, key="input_banos")
+        st.session_state.n_aseos = st.number_input("🧻 Aseos (Sin Ducha)", min_value=0, value=st.session_state.n_aseos, step=1, key="input_aseos")
+
+    with col_e3:
+        st.session_state.n_cocinas = st.number_input("🍳 Cocinas", min_value=0, value=st.session_state.n_cocinas, step=1, key="input_cocinas")
+        st.session_state.n_galerias = st.number_input("🧺 Galerías / Lavaderos", min_value=0, value=st.session_state.n_galerias, step=1, key="input_galerias")
+
+    with col_e4:
+        st.session_state.n_terrazas = st.number_input("🌿 Terrazas / Balcones", min_value=0, value=st.session_state.n_terrazas, step=1, key="input_terrazas")
+        st.session_state.n_trasteros = st.number_input("📦 Trasteros / Garajes / Otros", min_value=0, value=st.session_state.n_trasteros, step=1, key="input_trasteros")
+
+    total_estancias = (
+        st.session_state.n_dormitorios + st.session_state.n_salones + 
+        st.session_state.n_banos + st.session_state.n_aseos + 
+        st.session_state.n_cocinas + st.session_state.n_galerias + 
+        st.session_state.n_terrazas + st.session_state.n_trasteros
     )
-    
-    sub = df_pres["Importe (€)"].sum()
-    iva_val = sub * (tipo_iva / 100)
-    tot_val = sub + iva_val
-    
-    col_r1, col_r2, col_r3 = st.columns(3)
-    col_r1.metric("Base Imponible", f"{sub:,.2f} €")
-    col_r2.metric(f"IVA ({tipo_iva}%)", f"{iva_val:,.2f} €")
-    col_r3.metric("TOTAL PRESUPUESTO", f"{tot_val:,.2f} €")
-    
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df_pres.to_excel(writer, index=False, sheet_name='Presupuesto_Detallado')
-        
-        df_res = pd.DataFrame([
-            {"Concepto": "Cliente / Empresa", "Valor": st.session_state.cliente_nombre if st.session_state.cliente_nombre else "Sin especificar"},
-            {"Concepto": "Dirección de Obra", "Valor": st.session_state.cliente_obra if st.session_state.cliente_obra else "Sin especificar"},
-            {"Concepto": "Base Imponible", "Valor": f"{sub:.2f} €"},
-            {"Concepto": "IVA", "Valor": f"{iva_val:.2f} €"},
-            {"Concepto": "Total Presupuesto", "Valor": f"{tot_val:.2f} €"}
-        ])
-        df_res.to_excel(writer, index=False, sheet_name='Datos_Cliente')
-        
-    excel_bytes = output.getvalue()
-    
-    st.download_button(
-        label="🟢 Descargar Presupuesto en Excel (.xlsx)",
-        data=excel_bytes,
-        file_name="Presupuesto_Tecnico_Reformas.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-else:
-    st.info("Añade partidas desde las pestañas superiores para generar la tabla y descargar el presupuesto en Excel.")
+
+    st.markdown("---")
+    st.info(f"💡 **Resumen del Inmueble:** {total_estancias} estancias totales | **Superficie Afectada:** {st.session_state.superficie:.1f} m².")
+
+    # BOTONES DE NAVEGACIÓN INFERIOR
+    b_col1, b_col2, b_col3 = st.columns([2, 2, 2])
+    with b_col3:
+        if st.button("Siguiente Paso ➔ (2. Cálculos)", key="p1_next"):
+            st.session_state.paso_actual = 2
+            st.rerun()
+
+# -----------------------------------------------------------------------------
+# PASO 2: CÁLCULOS NORMATIVOS
+# -----------------------------------------------------------------------------
+elif st.session_state.paso_actual == 2:
+    st.subheader("🛠️ Paso 2: Dimensionado Técnico e Ingeniería Normativa")
+    st.write("Cálculos automáticos ajustados al REBT, CTE DB-HS, RITE e ICT2.")
+
+    # Electricidad REBT
+    with st.expander("⚡ **Cálculo Electrotécnico (REBT - RD 842/2002)**", expanded=True):
+        if not st.session_state.inc_elec:
+            st.caption("ℹ️ Capítulo de Electricidad marcado como NO INCLUIDO en el menú lateral.")
+        c_e1, c_e2 = st.columns(2)
+        with c_e1:
+            electrificacion = st.selectbox("Nivel de Electrificación", ["Básica (hasta 5.75 kW)", "Elevada (hasta 9.2 kW)"])
+            potencia_kw = st.selectbox("Potencia de Cálculo (kW)", [3.45, 4.60, 5.75, 7.36, 9.20], index=2)
+        with c_e2:
+            longitud_m = st.number_input("Longitud Derivación Individual (m)", min_value=0.0, value=15.0, step=1.0)
+            
+            # Motor de cálculo
+            I_calc = (potencia_kw * 1000) / (230 * 0.9)
+            cd_max = 230 * 0.015
+            s_min = (2 * longitud_m * (potencia_kw * 1000)) / (56 * cd_max * 230)
+            s_rec = max(6.0, s_min)
+            st.success(f"✔️ **Intensidad Nominal:** {I_calc:.2f} A | **Sección Mínima Calculada DI:** {s_rec:.2f} mm² (Cu)")
+
+    # Fontanería CTE DB-HS
+    with st.expander("🚰 **Cálculo Hidráulico y Saneamiento (CTE DB-HS4 / HS5)**", expanded=True):
+        if not st.session_state.inc_font:
+            st.caption("ℹ️ Capítulo de Fontanería marcado como NO INCLUIDO en el menú lateral.")
+        n_puntos = (st.session_state.n_banos * 3) + (st.session_state.n_aseos * 2) + (st.session_state.n_cocinas * 3) + (st.session_state.n_galerias * 2)
+        if n_puntos > 0:
+            caudal_instalado = (st.session_state.n_banos * 0.35) + (st.session_state.n_aseos * 0.20) + (st.session_state.n_cocinas * 0.40) + (st.session_state.n_galerias * 0.20)
+            coef_simult = 1 / math.sqrt(max(1, n_puntos))
+            caudal_diseno = caudal_instalado * coef_simult
+            
+            c1, c2 = st.columns(2)
+            c1.metric("Caudal Total Instalado", f"{caudal_instalado:.2f} L/s")
+            c2.metric("Caudal Simultáneo de Diseño", f"{caudal_diseno:.2f} L/s")
+        else:
+            st.info("Configura los baños y cocinas en el Paso 1 para calcular el caudal hidráulico.")
+
+    # Climatización RITE
+    with st.expander("❄️ **Cálculo Térmico y Climatización (RITE - RD 1027/2007)**", expanded=True):
+        if not st.session_state.inc_clima:
+            st.caption("ℹ️ Capítulo de Climatización marcado como NO INCLUIDO en el menú lateral.")
+        if st.session_state.superficie > 0:
+            zona = st.selectbox("Aislamiento Térmico del Inmueble", ["Buena (80 W/m²)", "Media (100 W/m²)", "Deficiente (120 W/m²)"])
+            w_m2 = 100 if "Media" in zona else (80 if "Buena" in zona else 120)
+            p_kw = (st.session_state.superficie * w_m2) / 1000
+            frig = p_kw * 860
+            st.metric("Potencia Térmica Necesaria", f"{p_kw:.2f} kW", f"{frig:.0f} Frigorías/h")
+        else:
+            st.info("Introduce la superficie en el menú lateral para calcular la carga térmica.")
+
+    st.markdown("---")
+    # BOTONES DE NAVEGACIÓN INFERIOR
+    b_col1, b_col2, b_col3 = st.columns([2, 2, 2])
+    with b_col1:
+        if st.button("⬅️ Paso Anterior (1. Estancias)", key="p2_prev"):
+            st.session_state.paso_actual = 1
+            st.rerun()
+    with b_col3:
+        if st.button("Siguiente Paso ➔ (3. Tarifas)", key="p2_next"):
+            st.session_state.paso_actual = 3
+            st.rerun()
+
+# -----------------------------------------------------------------------------
+# PASO 3: CUADRO DE PRECIOS UNITARIOS (€0 DE INICIO)
+# -----------------------------------------------------------------------------
+elif st.session_state.paso_actual == 3:
+    st.subheader("💶 Paso 3: Tarifación y Cuadro de Precios Unitarios (€0)")
+    st.write("⚠️ **Todos los precios inician en 0.00 € por defecto.** Define las tarifas acordadas para cada partida:")
+
+    col_p1, col_p2 = st.columns(2)
+
+    with col_p1:
+        st.markdown("#### ⚡ Capítulo 1: Electricidad")
+        st.session_state.pu_elec_m2 = st.number_input("Instalación Eléctrica General (€/m²)", min_value=0.0, value=st.session_state.pu_elec_m2, step=5.0)
+        st.session_state.pu_elec_cgmp = st.number_input("Cuadro CGMP y Protecciones (€/ud)", min_value=0.0, value=st.session_state.pu_elec_cgmp, step=25.0)
+
+        st.markdown("#### 🚰 Capítulo 2: Fontanería")
+        st.session_state.pu_font_bano = st.number_input("Instalación Completa Baño (€/baño)", min_value=0.0, value=st.session_state.pu_font_bano, step=50.0)
+        st.session_state.pu_font_cocina = st.number_input("Instalación Completa Cocina (€/cocina)", min_value=0.0, value=st.session_state.pu_font_cocina, step=50.0)
+
+    with col_p2:
+        st.markdown("#### ❄️ Capítulo 3: Climatización")
+        st.session_state.pu_clima_kw = st.number_input("Instalación Climatización RITE (€/kW)", min_value=0.0, value=st.session_state.pu_clima_kw, step=25.0)
+
+        st.markdown("#### 📡 Capítulo 4: Telecomunicaciones")
+        st.session_state.pu_teleco_toma = st.number_input("Toma de Datos RJ45 Cat6 (€/toma)", min_value=0.0, value=st.session_state.pu_teleco_toma, step=5.0)
+
+        st.markdown("#### 🏗️ Capítulo 5: Albañilería Auxiliar")
+        st.session_state.pu_albanil_m2 = st.number_input("Rozas, Ayuda y Remates (€/m²)", min_value=0.0, value=st.session_state.pu_albanil_m2, step=5.0)
+
+    st.markdown("---")
+    # BOTONES DE NAVEGACIÓN INFERIOR
+    b_col1, b_col2, b_col3 = st.columns([2, 2, 2])
+    with b_col1:
+        if st.button("⬅️ Paso Anterior (2. Cálculos)", key="p3_prev"):
+            st.session_state.paso_actual = 2
+            st.rerun()
+    with b_col3:
+        if st.button("Siguiente Paso ➔ (4. Presupuesto)", key="p3_next"):
+            st.session_state.paso_actual = 4
+            st.rerun()
+
+# -----------------------------------------------------------------------------
+# PASO 4: PRESUPUESTO FINAL Y EXPORTACIÓN A EXCEL
+# -----------------------------------------------------------------------------
+elif st.session_state.paso_actual == 4:
+    st.subheader("📊 Paso 4: Estado de Mediciones y Presupuesto General")
+
+    sup = st.session_state.superficie
+    n_banos = st.session_state.n_banos + st.session_state.n_aseos
+    n_cocinas = st.session_state.n_cocinas
+    tomas_teleco = (st.session_state.n_dormitorios + st.session_state.n_salones) * 2
+    potencia_clima = (sup * 100) / 1000 if sup > 0 else 0.0
+
+    filas = []
+
+    if st.session_state.inc_elec:
+        filas.append({"Capítulo": "⚡ Electricidad", "Partida": "Instalación Eléctrica General en Inmueble", "Unidad": "m²", "Cantidad": sup, "Precio Unitario (€)": st.session_state.pu_elec_m2, "Importe (€)": sup * st.session_state.pu_elec_m2})
+        filas.append({"Capítulo": "⚡ Electricidad", "Partida": "Cuadro General de Mando y Protecciones (CGMP)", "Unidad": "ud", "Cantidad": 1 if sup > 0 else 0, "Precio Unitario (€)": st.session_state.pu_elec_cgmp, "Importe (€)": (1 if sup > 0 else 0) * st.session_state.pu_elec_cgmp})
+
+    if st.session_state.inc_font:
+        filas.append({"Capítulo": "🚰 Fontanería", "Partida": "Instalación Fontanería y Saneamiento en Baños", "Unidad": "ud", "Cantidad": n_banos, "Precio Unitario (€)": st.session_state.pu_font_bano, "Importe (€)": n_banos * st.session_state.pu_font_bano})
+        filas.append({"Capítulo": "🚰 Fontanería", "Partida": "Instalación Fontanería y Desagües en Cocina", "Unidad": "ud", "Cantidad": n_cocinas, "Precio Unitario (€)": st.session_state.pu_font_cocina, "Importe (€)": n_cocinas * st.session_state.pu_font_cocina})
+
+    if st.session_state.inc_clima:
+        filas.append({"Capítulo": "❄️ Climatización", "Partida": "Equipamiento Climatización RITE", "Unidad": "kW", "Cantidad": potencia_clima, "Precio Unitario (€)": st.session_state.pu_clima_kw, "Importe (€)": potencia_clima * st.session_state.pu_clima_kw})
+
+    if st.session_state.inc_teleco:
+        filas.append({"Capítulo": "📡 Telecomunicaciones", "Partida": "Red de Datos Cat6 e Instalación ICT2", "Unidad": "toma", "Cantidad": tomas_teleco, "Precio Unitario (€)": st.session_state.pu_teleco_toma, "Importe (€)": tomas_teleco * st.session_state.pu_teleco_toma})
+
+    if st.session_state.inc_albanil:
+        filas.append({"Capítulo": "🏗️ Albañilería", "Partida": "Rozas, Ayuda a Instalaciones y Remates", "Unidad": "m²", "Cantidad": sup, "Precio Unitario (€)": st.session_state.pu_albanil_m2, "Importe (€)": sup * st.session_state.pu_albanil_m2})
+
+    if filas:
+        df_presupuesto = pd.DataFrame(filas)
+        st.dataframe(
+            df_presupuesto.style.format({
+                "Cantidad": "{:.1f}",
+                "Precio Unitario (€)": "{:.2f} €",
+                "Importe (€)": "{:.2f} €"
+            }),
+            use_container_width=True
+        )
+
+        subtotal = df_presupuesto["Importe (€)"].sum()
+        impuesto = subtotal * (tipo_iva / 100)
+        total = subtotal + impuesto
+
+        st.markdown("---")
+        c_r1, c_r2, c_r3 = st.columns(3)
+        c_r1.metric("Base Imponible (Subtotal)", f"{subtotal:,.2f} €")
+        c_r2.metric(f"IVA ({tipo_iva}%)", f"{impuesto:,.2f} €")
+        c_r3.metric("TOTAL PRESUPUESTO", f"{total:,.2f} €")
+
+        st.markdown("---")
+
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_presupuesto.to_excel(writer, index=False, sheet_name='Presupuesto_Detallado')
+
+            df_resumen = pd.DataFrame([
+                {"Concepto": "Cliente / Referencia", "Valor": st.session_state.cliente_nombre if st.session_state.cliente_nombre else "Sin especificar"},
+                {"Concepto": "Ubicación Obra", "Valor": st.session_state.cliente_obra if st.session_state.cliente_obra else "Sin especificar"},
+                {"Concepto": "Superficie Útil", "Valor": f"{sup} m²"},
+                {"Concepto": "Subtotal (Base Imponible)", "Valor": f"{subtotal:.2f} €"},
+                {"Concepto": f"IVA ({tipo_iva}%)", "Valor": f"{impuesto:.2f} €"},
+                {"Concepto": "Total Presupuesto", "Valor": f"{total:.2f} €"}
+            ])
+            df_resumen.to_excel(writer, index=False, sheet_name='Resumen_Ejecutivo')
+
+        excel_bytes = output.getvalue()
+
+        st.download_button(
+            label="🟢 Descargar Presupuesto Profesional en Excel (.xlsx)",
+            data=excel_bytes,
+            file_name=f"Presupuesto_{(st.session_state.cliente_nombre if st.session_state.cliente_nombre else 'Reforma').replace(' ', '_')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    else:
+        st.info("👉 Selecciona al menos una especialidad en el menú lateral para ver el desglose de presupuesto.")
+
+    st.markdown("---")
+    # BOTONES DE NAVEGACIÓN INFERIOR
+    b_col1, b_col2, b_col3 = st.columns([2, 2, 2])
+    with b_col1:
+        if st.button("⬅️ Paso Anterior (3. Tarifas)", key="p4_prev"):
+            st.session_state.paso_actual = 3
+            st.rerun()
+
+# -----------------------------------------------------------------------------
+# PASO 5: BIBLIOTECA NORMATIVA
+# -----------------------------------------------------------------------------
+elif st.session_state.paso_actual == 5:
+    st.subheader("📚 Paso 5: Biblioteca Técnica y Referencias Normativas")
+    st.write("Compendio normativo oficial de consulta técnica:")
+
+    tab_n1, tab_n2, tab_n3, tab_n4 = st.tabs(["⚡ REBT (Electricidad)", "🚰 CTE DB-HS (Fontanería)", "❄️ RITE (Climatización)", "📡 ICT2 (Telecomunicaciones)"])
+
+    with tab_n1:
+        st.markdown("### ⚡ Reglamento Electrotécnico para Baja Tensión (REBT)")
+        st.write("• **ITC-BT-25:** Circuitos C1 (iluminación), C2 (enchufes generales), C3 (cocina/horno), C4 (lavadora/lavavajillas/termo) y C5 (baños/auxiliares).")
+        st.write("• **Límite Caída de Tensión:** Máximo 1.5% en derivación individual y 3% en instalaciones interiores.")
+
+    with tab_n2:
+        st.markdown("### 🚰 Código Técnico de la Edificación (CTE DB-HS4/HS5)")
+        st.write("• **Caudales Mínimos:** Lavabo: 0.10 L/s | Ducha: 0.20 L/s | Fregadero: 0.20 L/s.")
+        st.write("• **Presión de Servicio:** Mínima 1 bar, máxima 5 bar.")
+
+    with tab_n3:
+        st.markdown("### ❄️ Reglamento de Instalaciones Térmicas (RITE)")
+        st.write("• **Mantenimiento y Eficiencia:** Obligatoriedad de regulación por termostato y contabilización energética.")
+
+    with tab_n4:
+        st.markdown("### 📡 Infraestructuras de Telecomunicaciones (ICT2)")
+        st.write("• **Redes:** Par trenzado Cat6, Fibra Óptica (FTTH) y Coaxial. Instalación de PAU centralizado.")
+
+    st.markdown("---")
+    b_col1, b_col2, b_col3 = st.columns([2, 2, 2])
+    with b_col1:
+        if st.button("⬅️ Paso Anterior (4. Presupuesto)", key="p5_prev"):
+            st.session_state.paso_actual = 4
+            st.rerun()
