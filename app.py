@@ -2,9 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 
-# -----------------------------------------------------------------------------
-# CONFIGURACIÓN DE PÁGINA
-# -----------------------------------------------------------------------------
+# Configuración de página con estética de Manual Técnico Normativo (RITE / REBT / CTE)
 st.set_page_config(
     page_title="Gestor Técnico de Reformas e Instalaciones",
     page_icon="📘",
@@ -12,68 +10,16 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# -----------------------------------------------------------------------------
-# ESTILOS CSS - AZUL PROFUNDO (#0F2C59) Y AMARILLO ENERGÍA (#FFC107)
-# -----------------------------------------------------------------------------
+# Estilos CSS con paleta mejorada: Azul Profundo (#0F2C59) + Amarillo Energía (#FFC107)
 st.markdown("""
 <style>
-    /* Fondo principal */
     .main {
-        background-color: #F8FAFC;
+        background-color: #F8F9FA !important;
     }
     
-    /* Barra lateral (Sidebar) en Azul Profundo #0F2C59 */
-    [data-testid="stSidebar"] {
-        background-color: #0F2C59 !important;
-    }
-    [data-testid="stSidebar"] * {
-        color: #FFFFFF;
-    }
-    
-    /* ESTILO ESPECÍFICO PARA LAS 3 CASILLAS: Nombre, Dirección y Tipo de IVA */
-    [data-testid="stSidebar"] label {
-        color: #FFFFFF !important;
-        font-weight: 700 !important;
-        font-size: 1.05rem !important; /* +2pt */
-        margin-bottom: 0.3rem !important;
-    }
-    [data-testid="stSidebar"] input {
-        background-color: #FFFFFF !important;
-        color: #0F172A !important;
-        border-radius: 6px !important;
-        border: 2px solid #FFC107 !important;
-        font-weight: 700 !important;
-        padding: 0.5rem !important;
-    }
-    [data-testid="stSidebar"] div[data-baseweb="select"] {
-        background-color: #FFFFFF !important;
-        border-radius: 6px !important;
-        border: 2px solid #FFC107 !important;
-    }
-    [data-testid="stSidebar"] div[data-baseweb="select"] * {
-        color: #0F172A !important;
-        font-weight: 700 !important;
-    }
-
-    /* Botones de + y - en Amarillo Energía #FFC107 */
-    button[aria-label="Increase value"], 
-    button[aria-label="Decrease value"],
-    div[data-testid="stNumberInputStepDown"],
-    div[data-testid="stNumberInputStepUp"] {
-        background-color: #FFC107 !important;
-        color: #212529 !important;
-        border-radius: 4px !important;
-        border: 1px solid #D39E00 !important;
-    }
-    button[aria-label="Increase value"] *, 
-    button[aria-label="Decrease value"] * {
-        color: #212529 !important;
-        font-weight: bold !important;
-    }
-
-    /* Encabezado principal estilo Manual Técnico */
+    /* Header principal con fuente de título aumentada en 2 puntos */
     .header-rite {
-        background: linear-gradient(135deg, #0F2C59 0%, #081B38 100%);
+        background: linear-gradient(135deg, #0F2C59 0%, #007BFF 100%);
         padding: 1.5rem 2rem;
         border-radius: 10px;
         color: white;
@@ -83,14 +29,14 @@ st.markdown("""
     }
     .header-title {
         font-size: 2.3rem !important; /* Aumentado 2 puntos (era 2.1rem) */
-        font-weight: 800;
+        font-weight: 800 !important;
         color: #FFFFFF !important;
         margin: 0;
         letter-spacing: -0.5px;
     }
     .header-subtitle {
-        color: #CBD5E1;
-        font-size: 1.1rem !important; /* Aumentado 2 puntos (era 0.98rem) */
+        color: #E2E8F0 !important;
+        font-size: 1.1rem !important; /* Aumentado 2 puntos */
         margin-top: 0.3rem;
     }
     .header-badge {
@@ -98,62 +44,120 @@ st.markdown("""
         color: #212529 !important;
         padding: 0.35rem 0.9rem;
         border-radius: 6px;
-        font-weight: 700;
+        font-weight: 800;
         font-size: 0.95rem !important; /* Aumentado 2 puntos */
         display: inline-block;
         margin-top: 0.6rem;
     }
-    
-    /* Aumento de 2 puntos en los títulos generales */
-    h1 { font-size: 2.3rem !important; }
-    h2 { font-size: 1.9rem !important; }
-    h3 { font-size: 1.6rem !important; }
-    h4 { font-size: 1.3rem !important; }
-    .stSubheader, div[data-testid="stSubheader"] { font-size: 1.4rem !important; }
 
+    /* Fuentes de títulos aumentadas en 2 puntos en toda la app */
+    h1, .stMarkdown h1 { font-size: 2.3rem !important; color: #0F2C59 !important; font-weight: 800 !important; }
+    h2, .stMarkdown h2 { font-size: 1.85rem !important; color: #0F2C59 !important; font-weight: 800 !important; }
+    h3, .stMarkdown h3 { font-size: 1.55rem !important; color: #0F2C59 !important; font-weight: 800 !important; }
+    h4, .stMarkdown h4 { font-size: 1.25rem !important; color: #0F2C59 !important; font-weight: 800 !important; }
+
+    /* MENU IZQUIERDO (SIDEBAR): Fondo Azul Profundo */
+    section[data-testid="stSidebar"] {
+        background-color: #0F2C59 !important;
+    }
+    section[data-testid="stSidebar"] h1, 
+    section[data-testid="stSidebar"] h2, 
+    section[data-testid="stSidebar"] h3, 
+    section[data-testid="stSidebar"] h4,
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] span,
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] .stWidgetLabel {
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
+        font-size: 1.05rem !important; /* Aumentado 2pt */
+    }
+    
+    /* CAMBIO CLAVE: Color de fondo de los cuadros del menú izquierdo (Nombre, Dirección, IVA) */
+    section[data-testid="stSidebar"] input,
+    section[data-testid="stSidebar"] div[data-baseweb="input"] input,
+    section[data-testid="stSidebar"] div[data-baseweb="input"],
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div,
+    section[data-testid="stSidebar"] div[role="combobox"] {
+        background-color: #FFFFFF !important;
+        color: #0F172A !important;
+        border: 2px solid #FFC107 !important;
+        border-radius: 6px !important;
+        font-weight: 700 !important;
+        font-size: 1.0rem !important;
+    }
+    
+    section[data-testid="stSidebar"] div[data-baseweb="select"] span,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] div {
+        color: #0F172A !important;
+        font-weight: 700 !important;
+    }
+
+    /* Tarjetas de producto */
     .card-product {
-        background-color: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-top: 4px solid #0F2C59;
-        border-radius: 8px;
+        background-color: #FFFFFF !important;
+        border: 2px solid #E2E8F0 !important;
+        border-top: 5px solid #0F2C59 !important;
+        border-radius: 10px;
         padding: 1.2rem;
-        margin-bottom: 1.2rem;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
     }
     .price-tag {
-        font-size: 1.55rem !important; /* Aumentado 2 pt */
-        font-weight: 800;
-        color: #0F2C59;
+        font-size: 1.55rem !important;
+        font-weight: 800 !important;
+        color: #0F2C59 !important;
     }
     .unit-tag {
-        font-size: 0.95rem !important; /* Aumentado 2 pt */
-        color: #64748B;
-        font-weight: 600;
+        font-size: 0.9rem !important;
+        color: #475569 !important;
+        font-weight: 700 !important;
     }
-    .stButton>button {
-        background-color: #FFC107;
+
+    /* Botones de incremento y decremento (+ y -) en Amarillo Energía */
+    div[data-testid="stNumberInput"] button,
+    button[aria-label="Decrease value"],
+    button[aria-label="Increase value"] {
+        background-color: #FFC107 !important;
         color: #212529 !important;
-        font-weight: 700;
-        border: none;
-        border-radius: 6px;
-        padding: 0.5rem 1rem;
-        width: 100%;
+        border: 1px solid #D39E00 !important;
+        font-weight: 900 !important;
+        border-radius: 4px !important;
+    }
+    div[data-testid="stNumberInput"] button:hover,
+    button[aria-label="Decrease value"]:hover,
+    button[aria-label="Increase value"]:hover {
+        background-color: #E0A800 !important;
+        color: #000000 !important;
+    }
+    
+    /* Cuadros de número/cantidad */
+    div[data-testid="stNumberInput"] input {
+        background-color: #FFFFFF !important;
+        color: #0F172A !important;
+        border: 2px solid #007BFF !important;
+        font-weight: 800 !important;
+    }
+
+    /* Botones de Acción principales */
+    .stButton>button {
+        background-color: #FFC107 !important;
+        color: #212529 !important;
+        font-weight: 800 !important;
+        border: none !important;
+        border-radius: 6px !important;
+        padding: 0.6rem 1rem !important;
+        width: 100% !important;
+        font-size: 1.0rem !important;
     }
     .stButton>button:hover {
-        background-color: #E0A800;
-        color: #212529 !important;
-    }
-    .stSelectbox label, .stTextInput label, .stNumberInput label {
-        color: #1E293B;
-        font-weight: 700;
-        font-size: 1.05rem !important; /* Aumentado 2 puntos */
+        background-color: #E0A800 !important;
+        color: #000000 !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# -----------------------------------------------------------------------------
-# INICIALIZACIÓN DE ESTADO DE SESIÓN
-# -----------------------------------------------------------------------------
+# Inicialización de estado de sesión
 if 'cesta' not in st.session_state:
     st.session_state.cesta = {}
 
@@ -163,9 +167,7 @@ if 'cliente_nombre' not in st.session_state:
 if 'cliente_obra' not in st.session_state:
     st.session_state.cliente_obra = ""
 
-# -----------------------------------------------------------------------------
-# ENCABEZADO PRINCIPAL ESTILO MANUAL TÉCNICO RITE/REBT
-# -----------------------------------------------------------------------------
+# Encabezado principal estilo Manual Técnico RITE/REBT
 st.markdown("""
 <div class="header-rite">
     <div class="header-title">📘 ALMACÉN TÉCNICO & SERVICIOS NORMATIVOS</div>
@@ -174,24 +176,22 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# -----------------------------------------------------------------------------
-# BARRA LATERAL: CESTA Y CONFIGURACIÓN DE FACTURACIÓN
-# -----------------------------------------------------------------------------
+# Barra lateral: Cesta y configuración de facturación
 st.sidebar.markdown("## 🛒 Presupuesto Activo")
 
 st.session_state.cliente_nombre = st.sidebar.text_input(
-    "Cliente / Empresa", 
+    "Cliente / Empresa:", 
     value=st.session_state.cliente_nombre, 
     placeholder="Ej. Juan Pérez / Reforma C/ Mayor"
 )
 st.session_state.cliente_obra = st.sidebar.text_input(
-    "Dirección de la Obra", 
+    "Dirección de la Obra:", 
     value=st.session_state.cliente_obra, 
     placeholder="Ej. Castelldefels, Barcelona"
 )
 
 tipo_iva = st.sidebar.selectbox(
-    "Tipo de IVA Aplicable",
+    "Tipo de IVA Aplicable:",
     [21, 10, 0],
     format_func=lambda x: f"{x}% ({'General' if x==21 else 'Reducido Reforma' if x==10 else 'Exento'})"
 )
@@ -211,7 +211,7 @@ else:
         subtotal_cesta += imp
         
         st.sidebar.markdown(f"**{datos['nombre']}**")
-        col_c1, col_c2 = st.sidebar.columns()
+        col_c1, col_c2 = st.sidebar.columns(2)  # CORREGIDO: st.sidebar.columns(2) para evitar TypeError
         with col_c1:
             st.caption(f"{cant:.1f} {datos['unidad']} x {pu:.2f} € = **{imp:.2f} €**")
         with col_c2:
@@ -231,9 +231,7 @@ else:
         st.session_state.cesta = {}
         st.rerun()
 
-# -----------------------------------------------------------------------------
-# BASE DE DATOS DE PARTIDAS Y MATERIALES
-# -----------------------------------------------------------------------------
+# Base de datos de partidas y materiales
 productos_db = {
     "elec": [
         {
@@ -261,7 +259,7 @@ productos_db = {
     "font": [
         {
             "id": "f1", 
-            "nombre": "Shower Instalación Fontanería Baño (CTE DB-HS4/HS5)", 
+            "nombre": "🚿 Instalación Fontanería Baño (CTE DB-HS4/HS5)", 
             "unidad": "baño", 
             "precio": 850.00, 
             "desc": "Red de distribución Multicapa/PEX para agua fría/caliente y desagües de PVC."
@@ -340,7 +338,7 @@ productos_db = {
             "nombre": "📦 Pack Reforma Integral Baño Completo", 
             "unidad": "pack", 
             "precio": 3200.00, 
-            "desc": "Fontanería CTE + Electricidad + Alicatado + Sanitaros + Ducha + Grifería."
+            "desc": "Fontanería CTE + Electricidad + Alicatado + Sanitarios + Ducha + Grifería."
         }
     ]
 }
@@ -351,8 +349,8 @@ def render_categoria(lista_prods):
         with cols[idx % 3]:
             st.markdown(f"""
             <div class="card-product">
-                <h4 style="margin:0 0 0.4rem 0; color:#0F2C59; font-size:1.2rem;">{prod['nombre']}</h4>
-                <p style="font-size:0.9rem; color:#475569; min-height:48px; margin-bottom:0.8rem; line-height:1.3;">{prod['desc']}</p>
+                <h4 style="margin:0 0 0.4rem 0; color:#0F2C59; font-size:1.25rem;">{prod['nombre']}</h4>
+                <p style="font-size:0.95rem; color:#475569; min-height:48px; margin-bottom:0.8rem; line-height:1.3;">{prod['desc']}</p>
                 <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.8rem;">
                     <span class="price-tag">{prod['precio']:.2f} €</span>
                     <span class="unit-tag">por {prod['unidad']}</span>
@@ -373,9 +371,7 @@ def render_categoria(lista_prods):
                 st.success(f"Añadido: {cant:.1f} {prod['unidad']} de {prod['nombre']}")
                 st.rerun()
 
-# -----------------------------------------------------------------------------
-# PESTAÑAS DEL CATÁLOGOS TÉCNICO
-# -----------------------------------------------------------------------------
+# Pestañas del Catálogo Técnico
 cat_elec, cat_font, cat_clima, cat_obras, cat_packs = st.tabs([
     "⚡ Electricidad (REBT)",
     "🚰 Fontanería (CTE)",
@@ -404,9 +400,7 @@ with cat_packs:
     st.subheader("📦 Packs de Reforma Completa")
     render_categoria(productos_db["packs"])
 
-# -----------------------------------------------------------------------------
-# TABLA RESUMEN Y EXPORTACIÓN A EXCEL
-# -----------------------------------------------------------------------------
+# Tabla resumen y exportación a Excel
 st.markdown("---")
 st.subheader("📊 Resumen General del Presupuesto")
 
@@ -438,7 +432,7 @@ if st.session_state.cesta:
     
     col_r1, col_r2, col_r3 = st.columns(3)
     col_r1.metric("Base Imponible", f"{sub:,.2f} €")
-    col_r2.metric(f"IVA ({tipo_iva}%)\", f\"{iva_val:,.2f} €\")
+    col_r2.metric(f"IVA ({tipo_iva}%)", f"{iva_val:,.2f} €")
     col_r3.metric("TOTAL PRESUPUESTO", f"{tot_val:,.2f} €")
     
     output = io.BytesIO()
