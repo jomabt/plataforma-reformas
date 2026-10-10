@@ -3,136 +3,83 @@ import pandas as pd
 import math
 import io
 
-# -----------------------------------------------------------------------------
-# CONFIGURACIÓN DE PÁGINA - SAAS COMERCIAL "PREMIUM LIGHT"
-# -----------------------------------------------------------------------------
+# Configuración de página
 st.set_page_config(
-    page_title="PRO-REFORMAS | Software Técnico y Presupuestos",
+    page_title="PRO-REFORMAS | Gestor Técnico & Presupuestos",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# -----------------------------------------------------------------------------
-# DISEÑO VISUAL ATRACTIVO, ERGONÓMICO Y FRESCO (DISEÑO SAAS COMERCIAL MODERNO)
-# -----------------------------------------------------------------------------
+# Estilos CSS limpios y claros (Soft Light Theme) sin alterar los colores nativos de los checkboxes
 st.markdown("""
 <style>
-    /* 1. Fondo general de la app */
+    /* Fondo general claro */
     .stApp {
-        background-color: #F8FAFC !important;
-        color: #0F172A !important;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-
-    /* 2. Barra lateral (Sidebar) clara, fresca y descansada */
-    [data-testid="stSidebar"] {
-        background-color: #F0F4FF !important; /* Soft Indigo Light Tint */
-        border-right: 1px solid #C7D2FE !important;
-        padding-top: 1.5rem;
+        background-color: #F8FAFC;
     }
     
-    [data-testid="stSidebar"] * {
-        color: #1E1B4B !important; /* Azul/Indigo profundo para lectura óptima */
+    /* Encabezado Principal */
+    .saas-header {
+        background: linear-gradient(135deg, #1E293B 0%, #0F2540 100%);
+        padding: 1.5rem 2rem;
+        border-radius: 10px;
+        color: white;
+        margin-bottom: 1.5rem;
+        border-left: 6px solid #2563EB;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
-
-    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
-        color: #312E81 !important;
-        font-weight: 800 !important;
-    }
-
-    /* 3. Estilo de los campos de entrada e inputs en el Sidebar y Cuerpo */
-    input[type="text"], input[type="number"], .stSelectbox select, div[data-baseweb="select"] {
-        background-color: #FFFFFF !important;
-        color: #0F172A !important;
-        border: 1.5px solid #A5B4FC !important;
-        border-radius: 8px !important;
-        font-weight: 600 !important;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
-    }
-
-    input:focus, div[data-baseweb="select"]:focus-within {
-        border-color: #4F46E5 !important;
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2) !important;
-    }
-
-    /* 4. Arreglo visual completo para botones de + y - (Step Buttons en Number Inputs) */
-    div[data-testid="stNumberInput"] button {
-        background-color: #E0E7FF !important;
-        color: #3730A3 !important;
-        border: 1.5px solid #A5B4FC !important;
-        border-radius: 6px !important;
-        font-weight: 800 !important;
-        font-size: 1.1rem !important;
-        transition: all 0.2s ease !important;
-    }
-    
-    div[data-testid="stNumberInput"] button:hover {
-        background-color: #4F46E5 !important;
-        color: #FFFFFF !important;
-        border-color: #4F46E5 !important;
-    }
-
-    /* 5. Header de la aplicación estilo SaaS comercial moderno */
-    .hero-saas {
-        background: linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #4F46E5 100%);
-        padding: 1.8rem 2.2rem;
-        border-radius: 14px;
-        color: #FFFFFF;
-        margin-bottom: 1.8rem;
-        box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.25);
-    }
-
-    .hero-title {
-        font-size: 2.1rem;
+    .saas-title {
+        font-size: 2rem;
         font-weight: 800;
         color: #FFFFFF !important;
         margin: 0;
-        letter-spacing: -0.5px;
+    }
+    .saas-subtitle {
+        color: #94A3B8 !important;
+        font-size: 0.98rem;
+        margin-top: 0.3rem;
     }
 
-    .hero-subtitle {
-        color: #E0E7FF !important;
-        font-size: 1.02rem;
-        margin-top: 0.4rem;
+    /* Tarjetas de Módulos */
+    .card-module {
+        background-color: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
-
-    /* 6. Botones de acción principales */
+    
+    /* Estilos de botones principales */
     .stButton>button {
-        background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%) !important;
+        background-color: #2563EB !important;
         color: #FFFFFF !important;
         font-weight: 700 !important;
         border: none !important;
-        border-radius: 8px !important;
-        padding: 0.65rem 1.2rem !important;
+        border-radius: 6px !important;
+        padding: 0.6rem 1.2rem !important;
         width: 100% !important;
-        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2) !important;
         transition: all 0.2s ease !important;
     }
-
     .stButton>button:hover {
-        transform: translateY(-1px) !important;
-        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35) !important;
-        background: linear-gradient(135deg, #4338CA 0%, #3730A3 100%) !important;
-    }
-
-    /* Labels de todo el sistema */
-    label, div[data-baseweb="label"] {
-        color: #1E293B !important;
-        font-weight: 700 !important;
-        font-size: 0.92rem !important;
+        background-color: #1D4ED8 !important;
+        color: #FFFFFF !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# ESTADO DE SESIÓN (PERSISTENCIA DE DATOS)
+# ESTADO DE SESIÓN
 # -----------------------------------------------------------------------------
+if 'paso_actual' not in st.session_state:
+    st.session_state.paso_actual = 1
+
 if 'cliente_nombre' not in st.session_state: st.session_state.cliente_nombre = ""
 if 'cliente_obra' not in st.session_state: st.session_state.cliente_obra = ""
 if 'superficie' not in st.session_state: st.session_state.superficie = 0.0
 
-# Cantidad de estancias completas
+# Estancias de la vivienda
 if 'n_dormitorios' not in st.session_state: st.session_state.n_dormitorios = 0
 if 'n_salones' not in st.session_state: st.session_state.n_salones = 0
 if 'n_banos' not in st.session_state: st.session_state.n_banos = 0
@@ -142,7 +89,7 @@ if 'n_galerias' not in st.session_state: st.session_state.n_galerias = 0
 if 'n_terrazas' not in st.session_state: st.session_state.n_terrazas = 0
 if 'n_trasteros' not in st.session_state: st.session_state.n_trasteros = 0
 
-# Toggles de Alcance por Especialidad
+# Toggles de Capítulos
 if 'inc_elec' not in st.session_state: st.session_state.inc_elec = True
 if 'inc_font' not in st.session_state: st.session_state.inc_font = False
 if 'inc_clima' not in st.session_state: st.session_state.inc_clima = False
@@ -159,43 +106,25 @@ if 'pu_teleco_toma' not in st.session_state: st.session_state.pu_teleco_toma = 0
 if 'pu_albanil_m2' not in st.session_state: st.session_state.pu_albanil_m2 = 0.0
 
 # -----------------------------------------------------------------------------
-# HEADER DEL SOFTWARE
+# HEADER
 # -----------------------------------------------------------------------------
 st.markdown("""
-<div class="hero-saas">
-    <div>
-        <div class="hero-title">⚡ PRO-REFORMAS | Gestor Técnico & Presupuestos</div>
-        <div class="hero-subtitle">Plataforma SaaS para dimensionado normativo (REBT, CTE, RITE, ICT2) y ofertas comerciales de reformas.</div>
-    </div>
+<div class="saas-header">
+    <div class="saas-title">⚡ PRO-REFORMAS | Software de Cálculo & Presupuestos</div>
+    <div class="saas-subtitle">Plataforma SaaS para cálculo técnico normativo (REBT, CTE DB-HS, RITE, ICT2) y medición de obras</div>
 </div>
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# BARRA LATERAL (SIDEBAR): CLARA, LUMINOSA Y DE ALTO CONTRASTE
+# SIDEBAR: DATOS DEL CLIENTE Y ALCANCE
 # -----------------------------------------------------------------------------
-st.sidebar.markdown("### 👤 DATOS DEL CLIENTE Y OBRA")
-
-st.session_state.cliente_nombre = st.sidebar.text_input(
-    "📌 Nombre del Cliente / Empresa:", 
-    value=st.session_state.cliente_nombre, 
-    placeholder="Ej. Juan Pérez / D. Antonio López"
-)
-
-st.session_state.cliente_obra = st.sidebar.text_input(
-    "📍 Dirección / Ubicación de la Obra:", 
-    value=st.session_state.cliente_obra, 
-    placeholder="Ej. Av. Constitución 45, Castelldefels"
-)
-
-st.session_state.superficie = st.sidebar.number_input(
-    "📐 Superficie Útil Afectada (m²):", 
-    min_value=0.0, 
-    value=st.session_state.superficie, 
-    step=5.0
-)
+st.sidebar.markdown("## 👤 Datos del Cliente y Obra")
+st.session_state.cliente_nombre = st.sidebar.text_input("📌 Nombre del Cliente / Empresa:", value=st.session_state.cliente_nombre, placeholder="Ej. D. Juan Pérez")
+st.session_state.cliente_obra = st.sidebar.text_input("📍 Dirección / Ubicación de la Obra:", value=st.session_state.cliente_obra, placeholder="Ej. Castelldefels, Barcelona")
+st.session_state.superficie = st.sidebar.number_input("📐 Superficie Útil Afectada (m²):", min_value=0.0, value=st.session_state.superficie, step=5.0)
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 🔧 CAPÍTULOS INCLUIDOS")
+st.sidebar.markdown("## 🔧 Capítulos Incluidos")
 st.session_state.inc_elec = st.sidebar.checkbox("⚡ Capítulo 1: Electricidad (REBT)", value=st.session_state.inc_elec)
 st.session_state.inc_font = st.sidebar.checkbox("🚰 Capítulo 2: Fontanería (CTE DB-HS)", value=st.session_state.inc_font)
 st.session_state.inc_clima = st.sidebar.checkbox("❄️ Capítulo 3: Climatización (RITE)", value=st.session_state.inc_clima)
@@ -203,78 +132,95 @@ st.session_state.inc_teleco = st.sidebar.checkbox("📡 Capítulo 4: Telecomunic
 st.session_state.inc_albanil = st.sidebar.checkbox("🏗️ Capítulo 5: Albañilería Auxiliar", value=st.session_state.inc_albanil)
 
 st.sidebar.markdown("---")
-tipo_iva = st.sidebar.selectbox("Tipo de IVA Aplicable", [21, 10, 0], format_func=lambda x: f"{x}% ({'General' if x==21 else 'Reducido' if x==10 else 'Exento'})")
+tipo_iva = st.sidebar.selectbox("💶 Tipo de IVA Aplicable", [21, 10, 0], format_func=lambda x: f"{x}% ({'General' if x==21 else 'Reducido' if x==10 else 'Exento'})")
 
 # -----------------------------------------------------------------------------
-# NAVEGACIÓN PRINCIPAL
+# BOTONES DE NAVEGACIÓN SUPERIOR (PASO A PASO)
 # -----------------------------------------------------------------------------
-menu_opcion = st.radio(
-    "Navegación del Proyecto:",
-    ["📋 1. Alcance y Estancias", "🛠️ 2. Cálculos Normativos", "💶 3. Cuadro de Precios (€0)", "📊 4. Presupuesto Final y Excel", "📚 5. Biblioteca Normativa"],
-    horizontal=True
-)
+pasos_titulos = [
+    "📋 1. Estancias", 
+    "🛠️ 2. Cálculos Normativos", 
+    "💶 3. Cuadro de Precios", 
+    "📊 4. Presupuesto Final", 
+    "📚 5. Biblioteca"
+]
+
+cols_nav = st.columns(5)
+for idx, titulo in enumerate(pasos_titulos):
+    num_paso = idx + 1
+    with cols_nav[idx]:
+        if num_paso == st.session_state.paso_actual:
+            st.button(f"👉 {titulo}", key=f"nav_top_{num_paso}")
+        else:
+            if st.button(titulo, key=f"nav_top_{num_paso}"):
+                st.session_state.paso_actual = num_paso
+                st.rerun()
 
 st.markdown("---")
 
 # -----------------------------------------------------------------------------
-# NAVEGACIÓN 1: ALCANCE Y ESTANCIAS COMPLETA
+# CONTENIDO SEGÚN EL PASO ACTUAL
 # -----------------------------------------------------------------------------
-if menu_opcion == "📋 1. Alcance y Estancias":
+
+# PASO 1: ESTANCIAS
+if st.session_state.paso_actual == 1:
     st.subheader("📋 Paso 1: Configuración de Estancias y Geometría")
-    st.write("Indica la cantidad de cada tipo de estancia para determinar las necesidades mínimas normativas del proyecto.")
+    st.write("Indica las estancias afectadas de la vivienda o local para calcular de forma automática las tomas y circuitos requeridos.")
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.session_state.n_dormitorios = st.number_input("Dormitorios", min_value=0, value=st.session_state.n_dormitorios, step=1)
-        st.session_state.n_salones = st.number_input("Salones / Comedores", min_value=0, value=st.session_state.n_salones, step=1)
+        st.session_state.n_dormitorios = st.number_input("🛌 Dormitorios", min_value=0, value=st.session_state.n_dormitorios, step=1)
+        st.session_state.n_salones = st.number_input("🛋️ Salones / Comedores", min_value=0, value=st.session_state.n_salones, step=1)
     with col2:
-        st.session_state.n_banos = st.number_input("Baños Completos", min_value=0, value=st.session_state.n_banos, step=1)
-        st.session_state.n_aseos = st.number_input("Aseos (Sin Ducha)", min_value=0, value=st.session_state.n_aseos, step=1)
+        st.session_state.n_banos = st.number_input("🛁 Baños Completos", min_value=0, value=st.session_state.n_banos, step=1)
+        st.session_state.n_aseos = st.number_input("🧻 Aseos (Sin Ducha)", min_value=0, value=st.session_state.n_aseos, step=1)
     with col3:
-        st.session_state.n_cocinas = st.number_input("Cocinas", min_value=0, value=st.session_state.n_cocinas, step=1)
-        st.session_state.n_galerias = st.number_input("Galerías / Lavaderos", min_value=0, value=st.session_state.n_galerias, step=1)
+        st.session_state.n_cocinas = st.number_input("🍳 Cocinas", min_value=0, value=st.session_state.n_cocinas, step=1)
+        st.session_state.n_galerias = st.number_input("🧺 Galerías / Lavaderos", min_value=0, value=st.session_state.n_galerias, step=1)
     with col4:
-        st.session_state.n_terrazas = st.number_input("Terrazas / Balcones", min_value=0, value=st.session_state.n_terrazas, step=1)
-        st.session_state.n_trasteros = st.number_input("Trasteros / Garajes", min_value=0, value=st.session_state.n_trasteros, step=1)
+        st.session_state.n_terrazas = st.number_input("🌿 Terrazas / Balcones", min_value=0, value=st.session_state.n_terrazas, step=1)
+        st.session_state.n_trasteros = st.number_input("📦 Trasteros / Garaje / Otros", min_value=0, value=st.session_state.n_trasteros, step=1)
 
-    estancias_totales = (
-        st.session_state.n_dormitorios + st.session_state.n_salones + 
-        st.session_state.n_banos + st.session_state.n_aseos + 
-        st.session_state.n_cocinas + st.session_state.n_galerias + 
-        st.session_state.n_terrazas + st.session_state.n_trasteros
-    )
+    estancias_totales = (st.session_state.n_dormitorios + st.session_state.n_salones + st.session_state.n_banos + 
+                         st.session_state.n_aseos + st.session_state.n_cocinas + st.session_state.n_galerias + 
+                         st.session_state.n_terrazas + st.session_state.n_trasteros)
     
-    st.info(f"💡 **Resumen del Inmueble:** {estancias_totales} estancias/zonas configuradas | **Superficie Afectada:** {st.session_state.superficie:.1f} m².")
+    st.info(f"💡 **Resumen Inmueble:** {estancias_totales} estancias configuradas | **Superficie Útil:** {st.session_state.superficie:.1f} m².")
+    
+    st.markdown("---")
+    c_btn1, c_btn2 = st.columns([4, 1])
+    with c_btn2:
+        if st.button("Siguiente Paso ➔", key="btn_next_1"):
+            st.session_state.paso_actual = 2
+            st.rerun()
 
-# -----------------------------------------------------------------------------
-# NAVEGACIÓN 2: CÁLCULOS NORMATIVOS
-# -----------------------------------------------------------------------------
-elif menu_opcion == "🛠️ 2. Cálculos Normativos":
+# PASO 2: CÁLCULOS NORMATIVOS
+elif st.session_state.paso_actual == 2:
     st.subheader("🛠️ Paso 2: Dimensionado Técnico de Instalaciones")
-    st.write("Cálculos ingenieriles automáticos ajustados a las normativas españolas (REBT, CTE DB-HS, RITE e ICT2).")
-
+    st.write("Dimensionado automatizado basado en REBT, CTE DB-HS, RITE e ICT2.")
+    
+    # REBT
     with st.expander("⚡ **Cálculo Electrotécnico (REBT - RD 842/2002)**", expanded=True):
         if not st.session_state.inc_elec:
-            st.caption("ℹ️ Capítulo de Electricidad marcado como NO INCLUIDO.")
+            st.caption("ℹ️ Capítulo de Electricidad marcado como NO INCLUIDO en el menú lateral.")
         col_e1, col_e2 = st.columns(2)
         with col_e1:
             electrificacion = st.selectbox("Nivel de Electrificación", ["Básica (hasta 5.75 kW)", "Elevada (hasta 9.2 kW)"])
             potencia_kw = st.selectbox("Potencia de Cálculo (kW)", [3.45, 4.60, 5.75, 7.36, 9.20], index=2)
         with col_e2:
             longitud_m = st.number_input("Longitud Derivación Individual (m)", min_value=0.0, value=15.0, step=1.0)
-            
             I_calc = (potencia_kw * 1000) / (230 * 0.9)
             cd_max = 230 * 0.015
             s_min = (2 * longitud_m * (potencia_kw * 1000)) / (56 * cd_max * 230)
-            s_rec = max(6.0, s_min)
-            st.success(f"✔️ **Intensidad Nominal:** {I_calc:.2f} A | **Sección Mínima Calculada DI:** {s_rec:.2f} mm² (Cu)")
+            st.success(f"✔️ **Intensidad Nominal:** {I_calc:.2f} A | **Sección Mínima Cable DI:** {max(6.0, s_min):.2f} mm² (Cu)")
 
+    # Fontanería
     with st.expander("🚰 **Cálculo Hidráulico y Saneamiento (CTE DB-HS4 / HS5)**", expanded=True):
         if not st.session_state.inc_font:
-            st.caption("ℹ️ Capítulo de Fontanería marcado como NO INCLUIDO.")
-        n_puntos = (st.session_state.n_banos * 3) + (st.session_state.n_aseos * 2) + (st.session_state.n_cocinas * 3)
+            st.caption("ℹ️ Capítulo de Fontanería marcado como NO INCLUIDO en el menú lateral.")
+        n_puntos = (st.session_state.n_banos * 3) + (st.session_state.n_aseos * 2) + (st.session_state.n_cocinas * 3) + (st.session_state.n_galerias * 2)
         if n_puntos > 0:
-            caudal_instalado = (st.session_state.n_banos * 0.35) + (st.session_state.n_aseos * 0.20) + (st.session_state.n_cocinas * 0.40)
+            caudal_instalado = (st.session_state.n_banos * 0.35) + (st.session_state.n_aseos * 0.20) + (st.session_state.n_cocinas * 0.40) + (st.session_state.n_galerias * 0.20)
             coef_simult = 1 / math.sqrt(max(1, n_puntos))
             caudal_diseno = caudal_instalado * coef_simult
             
@@ -282,11 +228,12 @@ elif menu_opcion == "🛠️ 2. Cálculos Normativos":
             c1.metric("Caudal Total Instalado", f"{caudal_instalado:.2f} L/s")
             c2.metric("Caudal Simultáneo de Diseño", f"{caudal_diseno:.2f} L/s")
         else:
-            st.info("Configura los baños y cocinas en el Paso 1 para calcular el caudal hidráulico.")
+            st.info("Configura las estancias húmedas en el Paso 1 para ver el caudal.")
 
+    # Climatización RITE
     with st.expander("❄️ **Cálculo Térmico y Climatización (RITE - RD 1027/2007)**", expanded=True):
         if not st.session_state.inc_clima:
-            st.caption("ℹ️ Capítulo de Climatización marcado como NO INCLUIDO.")
+            st.caption("ℹ️ Capítulo de Climatización marcado como NO INCLUIDO en el menú lateral.")
         if st.session_state.superficie > 0:
             zona = st.selectbox("Calidad Térmica / Aislamiento", ["Buena (80 W/m²)", "Media (100 W/m²)", "Deficiente (120 W/m²)"])
             w_m2 = int(zona.split("(")[1].split(" W")[0])
@@ -294,14 +241,23 @@ elif menu_opcion == "🛠️ 2. Cálculos Normativos":
             frig = p_kw * 860
             st.metric("Potencia Térmica Necesaria", f"{p_kw:.2f} kW", f"{frig:.0f} Frigorías/h")
         else:
-            st.info("Introduce la superficie útil en el menú lateral para calcular la potencia térmica.")
+            st.info("Introduce la superficie útil en el menú lateral para calcular la carga térmica.")
 
-# -----------------------------------------------------------------------------
-# NAVEGACIÓN 3: CUADRO DE PRECIOS UNITARIOS
-# -----------------------------------------------------------------------------
-elif menu_opcion == "💶 3. Cuadro de Precios (€0)":
-    st.subheader("💶 Paso 3: Tarifación y Cuadro de Precios Unitarios")
-    st.write("⚠️ **Todos los precios inician en 0.00 €.** Define los precios unitarios convenidos para cada partida.")
+    st.markdown("---")
+    c_btn1, c_btn2, c_btn3 = st.columns([1, 3, 1])
+    with c_btn1:
+        if st.button("⬅️ Paso Anterior", key="btn_prev_2"):
+            st.session_state.paso_actual = 1
+            st.rerun()
+    with c_btn3:
+        if st.button("Siguiente Paso ➔", key="btn_next_2"):
+            st.session_state.paso_actual = 3
+            st.rerun()
+
+# PASO 3: CUADRO DE PRECIOS
+elif st.session_state.paso_actual == 3:
+    st.subheader("💶 Paso 3: Asignación de Precios Unitarios (€0 de inicio)")
+    st.write("⚠️ **Todos los precios unitarios comienzan en 0.00 €.** Define las tarifas de material y mano de obra para las partidas.")
 
     col_p1, col_p2 = st.columns(2)
 
@@ -324,10 +280,19 @@ elif menu_opcion == "💶 3. Cuadro de Precios (€0)":
         st.markdown("#### 🏗️ Capítulo 5: Albañilería Auxiliar")
         st.session_state.pu_albanil_m2 = st.number_input("Rozas, Ayuda y Tapado (€/m²)", min_value=0.0, value=st.session_state.pu_albanil_m2, step=5.0)
 
-# -----------------------------------------------------------------------------
-# NAVEGACIÓN 4: PRESUPUESTO FINAL Y EXCEL
-# -----------------------------------------------------------------------------
-elif menu_opcion == "📊 4. Presupuesto Final y Excel":
+    st.markdown("---")
+    c_btn1, c_btn2, c_btn3 = st.columns([1, 3, 1])
+    with c_btn1:
+        if st.button("⬅️ Paso Anterior", key="btn_prev_3"):
+            st.session_state.paso_actual = 2
+            st.rerun()
+    with c_btn3:
+        if st.button("Ver Presupuesto ➔", key="btn_next_3"):
+            st.session_state.paso_actual = 4
+            st.rerun()
+
+# PASO 4: PRESUPUESTO FINAL Y EXCEL
+elif st.session_state.paso_actual == 4:
     st.subheader("📊 Paso 4: Estado de Mediciones y Presupuesto General")
 
     sup = st.session_state.superficie
@@ -401,21 +366,30 @@ elif menu_opcion == "📊 4. Presupuesto Final y Excel":
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
     else:
-        st.info("👉 Selecciona al menos un capítulo en la barra lateral izquierda para generar el cuadro de presupuesto.")
+        st.info("👉 Selecciona al menos un capítulo en la barra lateral para ver la tabla del presupuesto.")
 
-# -----------------------------------------------------------------------------
-# NAVEGACIÓN 5: BIBLIOTECA NORMATIVA
-# -----------------------------------------------------------------------------
-elif menu_opcion == "📚 5. Biblioteca Normativa":
-    st.subheader("📚 Biblioteca Técnica y Referencias Normativas")
-    st.write("Compendio normativo de consulta para proyectos técnicos e instalaciones.")
+    st.markdown("---")
+    c_btn1, c_btn2, c_btn3 = st.columns([1, 3, 1])
+    with c_btn1:
+        if st.button("⬅️ Paso Anterior", key="btn_prev_4"):
+            st.session_state.paso_actual = 3
+            st.rerun()
+    with c_btn3:
+        if st.button("Ver Biblioteca ➔", key="btn_next_4"):
+            st.session_state.paso_actual = 5
+            st.rerun()
+
+# PASO 5: BIBLIOTECA NORMATIVA
+elif st.session_state.paso_actual == 5:
+    st.subheader("📚 Paso 5: Biblioteca Técnica y Referencias Normativas")
+    st.write("Compendio normativo de consulta para proyectos de ingeniería y edificación.")
 
     tab_n1, tab_n2, tab_n3, tab_n4 = st.tabs(["⚡ REBT (Electricidad)", "🚰 CTE DB-HS (Fontanería)", "❄️ RITE (Climatización)", "📡 ICT2 (Telecomunicaciones)"])
 
     with tab_n1:
         st.markdown("### ⚡ Reglamento Electrotécnico para Baja Tensión (REBT)")
-        st.write("• **ITC-BT-25:** Define los circuitos C1 (iluminación), C2 (enchufes generales), C3 (cocina/horno), C4 (lavadora/lavavajillas/termo) y C5 (baños/auxiliares).")
-        st.write("• **Límite de Caída de Tensión:** Máximo 1.5% en derivación individual y 3% en instalaciones interiores.")
+        st.write("• **ITC-BT-25:** Circuitos C1 (iluminación), C2 (enchufes generales), C3 (cocina/horno), C4 (lavadora/lavavajillas/termo) y C5 (baños/auxiliares).")
+        st.write("• **Caída de Tensión:** Máximo 1.5% en derivación individual y 3% en instalaciones interiores.")
 
     with tab_n2:
         st.markdown("### 🚰 Código Técnico de la Edificación (CTE DB-HS4/HS5)")
@@ -424,8 +398,15 @@ elif menu_opcion == "📚 5. Biblioteca Normativa":
 
     with tab_n3:
         st.markdown("### ❄️ Reglamento de Instalaciones Térmicas (RITE)")
-        st.write("• **Mantenimiento y Eficiencia:** Obligatoriedad de regulación por termostato y contabilización de consumos.")
+        st.write("• **Mantenimiento y Eficiencia:** Regulación termostática por zona e inspecciones periódicas.")
 
     with tab_n4:
         st.markdown("### 📡 Infraestructuras de Telecomunicaciones (ICT2)")
-        st.write("• **Redes:** Par trenzado Cat6, Fibra Óptica (FTTH) y Coaxial. Instalación de PAU centralizado.")
+        st.write("• **Redes:** Par trenzado Cat6, Fibra Óptica (FTTH) y Coaxial con PAU centralizado.")
+
+    st.markdown("---")
+    c_btn1, c_btn2 = st.columns([1, 4])
+    with c_btn1:
+        if st.button("⬅️ Paso Anterior", key="btn_prev_5"):
+            st.session_state.paso_actual = 4
+            st.rerun()
