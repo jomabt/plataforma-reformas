@@ -348,4 +348,4 @@ with tab5:
 
     with t_n4:
         st.markdown("### 📡 Infraestructuras Comunes de Telecomunicaciones (ICT2 - RD 346/2011)")
-        st.write("• **Redes Exigidas:** Fibra Óptica (FTTH), Cobre Cat6 y Coaxial para TV/SAT con PAU centralizado
+        st.write("• **Redes Exigidas:** Fibra Óptica (FTTH), Cobre Cat6 y Coaxial para TV/SAT con PAU centralizado.")
