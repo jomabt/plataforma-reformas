@@ -13,16 +13,11 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# ESTILOS CSS CON ALTA VISIBILIDAD (COMPATIBLE CON MODO CLARO Y OSCURO)
+# ESTILOS CSS LIMPIOS Y SEGUROS (ESTILIZA SOLO TARJETAS Y CABECERA)
 # -----------------------------------------------------------------------------
 st.markdown("""
 <style>
-    /* Fondo principal claro y limpio */
-    .stApp {
-        background-color: #F8FAFC !important;
-    }
-    
-    /* Encabezado principal estilo Manual Técnico */
+    /* Encabezado principal corporativo */
     .header-rite {
         background: linear-gradient(135deg, #0F2C59 0%, #081B38 100%);
         padding: 1.5rem 2rem;
@@ -30,146 +25,58 @@ st.markdown("""
         color: white;
         margin-bottom: 1.5rem;
         border-left: 8px solid #FFC107;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
     }
     .header-title {
-        font-size: 2.3rem !important;
+        font-size: 2.2rem;
         font-weight: 800;
-        color: #FFFFFF !important;
+        color: #FFFFFF;
         margin: 0;
         letter-spacing: -0.5px;
     }
     .header-subtitle {
-        color: #CBD5E1 !important;
-        font-size: 1.1rem !important;
+        color: #CBD5E1;
+        font-size: 1.05rem;
         margin-top: 0.3rem;
     }
     .header-badge {
         background-color: #FFC107;
-        color: #212529 !important;
+        color: #0F2C59;
         padding: 0.35rem 0.9rem;
         border-radius: 6px;
-        font-weight: 700;
+        font-weight: 800;
         font-size: 0.85rem;
         display: inline-block;
         margin-top: 0.6rem;
     }
 
-    /* Barra Lateral */
-    section[data-testid="stSidebar"] {
-        background-color: #0F2C59 !important;
-    }
-    section[data-testid="stSidebar"] * {
-        color: #FFFFFF !important;
-    }
-
-    /* Menú desplegable de IVA (st.sidebar.selectbox) */
-    section[data-testid="stSidebar"] div[data-baseweb="select"] {
-        background-color: #FFFFFF !important;
-        border: 2px solid #FFC107 !important;
-        border-radius: 6px !important;
-    }
-    section[data-testid="stSidebar"] div[data-baseweb="select"] * {
-        color: #0F172A !important;
-        background-color: #FFFFFF !important;
-        font-weight: 700 !important;
-    }
-    div[data-baseweb="menu"] {
-        background-color: #FFFFFF !important;
-    }
-    div[data-baseweb="menu"] li {
-        color: #0F172A !important;
-        background-color: #FFFFFF !important;
-    }
-    div[data-baseweb="menu"] li:hover {
-        background-color: #FFC107 !important;
-        color: #212529 !important;
-    }
-
-    /* Cuadros de cantidad de estancias y partidas (st.number_input) */
-    div[data-testid="stNumberInput"] input {
-        background-color: #FFFFFF !important;
-        color: #0F172A !important;
-        border: 2px solid #007BFF !important;
-        border-radius: 6px !important;
-        font-weight: 700 !important;
-        font-size: 1.05rem !important;
-    }
-    div[data-testid="stNumberInput"] button {
-        background-color: #FFC107 !important;
-        color: #212529 !important;
-        border: 1px solid #E0A800 !important;
-        font-weight: 800 !important;
-        border-radius: 6px !important;
-    }
-    div[data-testid="stNumberInput"] button:hover {
-        background-color: #E0A800 !important;
-        color: #000000 !important;
-    }
-
     /* Tarjetas de producto */
     .card-product {
-        background-color: #FFFFFF !important;
-        border: 2px solid #CBD5E1 !important;
-        border-top: 5px solid #0F2C59 !important;
-        border-radius: 10px;
+        background-color: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-top: 4px solid #0F2C59;
+        border-radius: 8px;
         padding: 1.2rem;
         margin-bottom: 0.8rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
     }
     .card-title {
-        color: #0F172A !important;
-        font-size: 1.25rem !important;
-        font-weight: 800 !important;
-        margin-bottom: 0.5rem !important;
+        color: #0F2C59;
+        font-size: 1.2rem;
+        font-weight: 800;
+        margin-bottom: 0.4rem;
     }
     .card-desc {
-        color: #334155 !important;
-        font-size: 0.95rem !important;
-        line-height: 1.4 !important;
-        margin-bottom: 0.8rem !important;
-        min-height: 50px;
-    }
-    .price-tag {
-        font-size: 1.55rem !important;
-        font-weight: 800 !important;
-        color: #0F2C59 !important;
+        color: #475569;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        margin-bottom: 0.8rem;
+        min-height: 48px;
     }
     .unit-tag {
-        font-size: 0.9rem !important;
-        color: #475569 !important;
-        font-weight: 700 !important;
-    }
-
-    /* Inputs generales de texto en la barra lateral */
-    section[data-testid="stSidebar"] input {
-        background-color: #FFFFFF !important;
-        color: #0F172A !important;
-        border: 2px solid #FFC107 !important;
-        font-weight: 700 !important;
-    }
-
-    /* Etiquetas generales */
-    label, .stWidgetLabel, div[data-baseweb="label"] {
-        color: #0F172A !important;
-        font-weight: 700 !important;
-        font-size: 1.0rem !important;
-    }
-
-    /* Botones de acción principales */
-    .stButton>button {
-        background-color: #007BFF !important;
-        color: #FFFFFF !important;
-        font-weight: 700 !important;
-        border: none !important;
-        border-radius: 6px !important;
-        padding: 0.6rem 1rem !important;
-        width: 100% !important;
-        font-size: 1.0rem !important;
-    }
-    .stButton>button:hover {
-        background-color: #0056b3 !important;
-        color: #FFFFFF !important;
+        font-size: 0.85rem;
+        color: #007BFF;
+        font-weight: 700;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -196,17 +103,17 @@ st.markdown("""
 <div class="header-rite">
     <div class="header-title">📘 ALMACÉN TÉCNICO & SERVICIOS NORMATIVOS</div>
     <div class="header-subtitle">Presupuestador Guiado según Reglamento RITE, REBT, CTE DB-HS e ICT2</div>
-    <div class="header-badge">PRECIOS 100% CONFIGURABLES EN €0.00 DE INICIO</div>
+    <div class="header-badge">EDICIÓN PROFESIONAL DE REFORMAS</div>
 </div>
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# BARRA DE NAVEGACIÓN Y BOTONES "VOLVER / IR A"
+# BARRA DE NAVEGACIÓN SUPERIOR
 # -----------------------------------------------------------------------------
 col_nav1, col_nav2, col_nav3 = st.columns([2, 2, 2])
 
 with col_nav1:
-    if st.button("📋 1. Ir al Catálogo de Servicios", key="nav_cat"):
+    if st.button("📋 1. Catálogo de Servicios", key="nav_cat"):
         st.session_state.seccion_actual = "catalogo"
         st.rerun()
 
@@ -216,7 +123,7 @@ with col_nav2:
         st.rerun()
 
 with col_nav3:
-    if st.button("🔄 Reiniciar Todo / Limpiar Cesta", key="nav_clear"):
+    if st.button("🔄 Reiniciar / Limpiar Cesta", key="nav_clear"):
         st.session_state.cesta = {}
         st.session_state.cliente_nombre = ""
         st.session_state.cliente_obra = ""
@@ -225,7 +132,7 @@ with col_nav3:
 st.markdown("---")
 
 # -----------------------------------------------------------------------------
-# BARRA LATERAL (CESTA Y DATOS DE OBRA)
+# BARRA LATERAL (DATOS DE OBRA Y CESTA)
 # -----------------------------------------------------------------------------
 st.sidebar.markdown("## 🛒 Presupuesto Activo")
 
@@ -247,10 +154,10 @@ tipo_iva = st.sidebar.selectbox(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 📋 Partidas en Cesta")
+st.sidebar.markdown("### 📋 Partidas Seleccionadas")
 
 if not st.session_state.cesta:
-    st.sidebar.info("La cesta está vacía. Selecciona partidas o paquetes en el catálogo.")
+    st.sidebar.info("La cesta está vacía. Añade partidas desde el catálogo.")
 else:
     subtotal_cesta = 0.0
     
@@ -282,7 +189,7 @@ else:
         st.rerun()
 
 # -----------------------------------------------------------------------------
-# BASE DE DATOS CON PRECIOS EN 0.00 € POR DEFECTO
+# BASE DE DATOS DE PRODUCTOS Y SERVICIOS
 # -----------------------------------------------------------------------------
 productos_db = {
     "elec": [
@@ -399,7 +306,6 @@ def render_categoria(lista_prods):
     cols = st.columns(3)
     for idx, prod in enumerate(lista_prods):
         with cols[idx % 3]:
-            # Tarjeta de producto con alta visibilidad
             st.markdown(f"""
             <div class="card-product">
                 <div class="card-title">{prod['nombre']}</div>
@@ -411,14 +317,14 @@ def render_categoria(lista_prods):
             """, unsafe_allow_html=True)
             
             cant = st.number_input(
-                f"Cantidad de {prod['nombre']} ({prod['unidad']})", 
+                f"Cantidad ({prod['unidad']})", 
                 min_value=1.0, 
                 value=1.0, 
                 step=1.0, 
                 key=f"cant_{prod['id']}"
             )
             pu_custom = st.number_input(
-                f"Precio Unitario (€ por {prod['unidad']})", 
+                f"Precio Unitario (€)", 
                 min_value=0.0, 
                 value=0.0, 
                 step=10.0, 
@@ -426,22 +332,22 @@ def render_categoria(lista_prods):
                 key=f"pu_{prod['id']}"
             )
             
-            if st.button(f"🛒 Añadir {prod['nombre']} al Presupuesto", key=f"btn_{prod['id']}"):
+            if st.button(f"🛒 Añadir al Presupuesto", key=f"btn_{prod['id']}"):
                 st.session_state.cesta[prod['id']] = {
                     "nombre": prod['nombre'],
                     "unidad": prod['unidad'],
                     "cantidad": cant,
                     "precio_unitario": pu_custom
                 }
-                st.success(f"✔️ Añadido: {cant:.1f} {prod['unidad']} a {pu_custom:.2f} €/unidad")
+                st.success(f"Añadido: {cant:.1f} {prod['unidad']} a {pu_custom:.2f} €/ud")
                 st.rerun()
 
 # -----------------------------------------------------------------------------
-# RENDERIZADO DE SECCIÓN SEGÚN NAVEGACIÓN
+# RENDERIZADO DE VISTAS SEGÚN LA NAVEGACIÓN
 # -----------------------------------------------------------------------------
 if st.session_state.seccion_actual == "catalogo":
-    st.subheader("📋 Catálogo Técnico por Especialidad (Inicia en 0.00 €)")
-    st.write("Configura la cantidad y la tarifa unitaria (€) de cada elemento antes de añadirlo al presupuesto:")
+    st.subheader("📋 Catálogo Técnico de Especialidades")
+    st.write("Configura la cantidad y tarifa unitaria (€) de cada partida antes de añadirla:")
     
     cat_elec, cat_font, cat_clima, cat_obras, cat_packs = st.tabs([
         "⚡ Electricidad (REBT)",
@@ -472,19 +378,13 @@ if st.session_state.seccion_actual == "catalogo":
         render_categoria(productos_db["packs"])
 
     st.markdown("---")
-    col_bottom1, col_bottom2 = st.columns([2, 2])
-    with col_bottom1:
-        if st.button("🛒 Ir a Ver el Presupuesto Completo", key="btn_ir_pres_bot"):
-            st.session_state.seccion_actual = "presupuesto"
-            st.rerun()
+    if st.button("🛒 Ver Presupuesto Completo y Descargar Excel", key="btn_ir_pres_bot"):
+        st.session_state.seccion_actual = "presupuesto"
+        st.rerun()
 
-# -----------------------------------------------------------------------------
-# SECCIÓN PRESUPUESTO
-# -----------------------------------------------------------------------------
 else:
     st.subheader("📊 Resumen General del Presupuesto Comercial")
     
-    # Botón explícito para VOLVER AL CATÁLOGO
     if st.button("⬅️ Volver al Catálogo de Servicios", key="btn_volver_cat_top"):
         st.session_state.seccion_actual = "catalogo"
         st.rerun()
@@ -546,7 +446,7 @@ else:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
     else:
-        st.info("La cesta está vacía. Haz clic en el botón de abajo para ir al catálogo y añadir elementos.")
+        st.info("La cesta está vacía. Selecciona partidas en el catálogo para generar el presupuesto.")
     
     st.markdown("---")
     if st.button("⬅️ Volver al Catálogo de Servicios", key="btn_volver_cat_bot"):
