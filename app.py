@@ -215,7 +215,7 @@ def presupuesto_excel(filas: list[dict], cliente: str, obra: str,
     ws.title = "Presupuesto"
 
     ws["A1"] = "PRESUPUESTO DE REFORMA"
-    ws["A1"].font = Font(name=FUENTE, size=14, bold=True, color="0F2C59")
+    ws["A1"].font = Font(name=FUENTE, size=14, bold=True, color="0B2545")
     for fila, (etiqueta, valor) in enumerate(
         [("Cliente:", cliente or "Sin especificar"),
          ("Obra:", obra or "Sin especificar"),
@@ -231,7 +231,7 @@ def presupuesto_excel(filas: list[dict], cliente: str, obra: str,
             ["Capítulo", "Partida", "Ud", "Cantidad", "Precio unit. (€)", "Importe (€)"], start=1):
         c = ws.cell(cab, col, titulo)
         c.font = Font(name=FUENTE, bold=True, color="FFFFFF")
-        c.fill = PatternFill("solid", fgColor="0F2C59")
+        c.fill = PatternFill("solid", fgColor="0B2545")
         c.alignment = Alignment(horizontal="center")
 
     primera = cab + 1
@@ -258,6 +258,8 @@ def presupuesto_excel(filas: list[dict], cliente: str, obra: str,
     for r in range(t, t + 3):
         for col in (4, 5, 6):
             ws.cell(r, col).font = Font(name=FUENTE, bold=(r == t + 2))
+    for col in (5, 6):
+        ws.cell(t + 2, col).fill = PatternFill("solid", fgColor="FFC400")
 
     ws.cell(t + 4, 1, "Las celdas de Cantidad, Precio y % de IVA son editables; "
                       "los importes se recalculan.").font = Font(name=FUENTE, italic=True)
@@ -270,21 +272,86 @@ def presupuesto_excel(filas: list[dict], cliente: str, obra: str,
     return salida.getvalue()
 
 
-st.set_page_config(page_title="PRO-REFORMAS | Cálculo y presupuestos", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="PRO-REFORMAS | Electro·Hidro", page_icon="⚡", layout="wide")
 
-# Estilo mínimo y estable: los colores viven en .streamlit/config.toml
-st.markdown("""
+# Paleta electro-hidro: amarillo eléctrico (#FFC400) + azul agua (#0096C7) sobre azul marino (#0B2545)
+ESTILO = """
 <style>
-.cabecera{background:#0F2C59;border-left:8px solid #FFC107;padding:1.4rem 2rem;
-          border-radius:10px;margin-bottom:1rem}
-.cabecera h1{color:#FFFFFF;font-size:2rem;margin:0;padding:0}
-.cabecera p{color:#9CC7FF;margin:.3rem 0 0 0;font-size:1.05rem}
+.stApp{background:#F3F8FC;}
+.block-container{padding-top:1.2rem;max-width:1250px;}
+[data-testid="stMain"] :is(p,li,h1,h2,h3,h4,label){color:#10243E;}
+[data-testid="stAlert"] *{color:#10243E !important;}
+
+/* Cabecera */
+.cabecera{background:linear-gradient(90deg,#0B2545 0%,#0B5E7E 65%,#0096C7 100%);
+  border-bottom:6px solid #FFC400;border-radius:12px;padding:1.2rem 1.8rem;margin-bottom:1rem;}
+.cabecera .t{color:#FFFFFF !important;font-size:2rem;font-weight:800;line-height:1.2;}
+.cabecera .s{color:#CDEBFA !important;font-size:1.02rem;margin-top:.3rem;}
+
+/* Bandas de sección por capítulo */
+.banda{border-radius:10px;padding:.5rem 1rem;font-weight:800;font-size:1.08rem;margin:.5rem 0 .6rem 0;
+  display:flex;justify-content:space-between;align-items:center;}
+.banda .etq{font-size:.76rem;font-weight:700;padding:.15rem .65rem;border-radius:20px;background:rgba(255,255,255,.28);}
+.b-elec{background:#FFC400;color:#0B2545 !important;}
+.b-hidro{background:#0096C7;color:#FFFFFF !important;}
+.b-clima{background:#2EC4B6;color:#06312E !important;}
+.b-teleco{background:#5B5BD6;color:#FFFFFF !important;}
+.b-alba{background:#6B7A8F;color:#FFFFFF !important;}
+.b-marino{background:#0B2545;color:#FFFFFF !important;}
+
+/* Tarjetas de resultado */
+.kpi{background:#FFFFFF;border-radius:10px;padding:.65rem 1rem;border-left:7px solid var(--c);
+  box-shadow:0 1px 4px rgba(11,37,69,.14);margin:.3rem 0;}
+.kpi .l{font-size:.78rem;font-weight:700;color:#5B7088 !important;text-transform:uppercase;letter-spacing:.03em;}
+.kpi .v{font-size:1.65rem;font-weight:800;color:#0B2545 !important;line-height:1.25;}
+.kpi .n{font-size:.82rem;color:#5B7088 !important;}
+.k-elec{--c:#FFC400;} .k-hidro{--c:#0096C7;} .k-clima{--c:#2EC4B6;} .k-marino{--c:#0B2545;}
+.kpi.total{background:#FFC400;}
+.kpi.total .l,.kpi.total .v,.kpi.total .n{color:#0B2545 !important;}
+
+/* Pestañas */
+button[data-baseweb="tab"] p{font-weight:700;font-size:1.02rem;}
+button[data-baseweb="tab"][aria-selected="true"] p{color:#0B5E7E !important;}
+div[data-baseweb="tab-highlight"]{background:#FFC400 !important;height:4px !important;}
+
+/* Botones */
+.stButton>button,.stDownloadButton>button{background:#FFC400;color:#0B2545 !important;border:none;
+  font-weight:800;border-radius:10px;width:100%;}
+.stButton>button:hover,.stDownloadButton>button:hover{background:#E6AF00;color:#000 !important;}
+
+/* Campos */
+[data-baseweb="input"],[data-baseweb="select"]>div{background:#FFFFFF !important;
+  border:2px solid #9BC4DA !important;border-radius:8px !important;}
+[data-baseweb="input"] input,[data-baseweb="select"] *{color:#10243E !important;}
+
+/* Barra lateral */
+section[data-testid="stSidebar"]{background:#0B2545 !important;}
+section[data-testid="stSidebar"] :is(p,span,label,h1,h2,h3,h4,li,div){color:#EAF4FB;}
+section[data-testid="stSidebar"] [data-baseweb="input"],
+section[data-testid="stSidebar"] [data-baseweb="select"]>div{border:2px solid #FFC400 !important;}
+section[data-testid="stSidebar"] [data-baseweb="input"] *,
+section[data-testid="stSidebar"] [data-baseweb="select"] *{color:#10243E !important;}
+.logo{font-size:1.45rem;font-weight:800;color:#FFC400 !important;margin-bottom:.4rem;}
+.barra{background:rgba(255,255,255,.22);border-radius:20px;height:10px;margin:.2rem 0 .5rem 0;}
+.barra>div{background:#FFC400;height:10px;border-radius:20px;}
 </style>
 <div class="cabecera">
-  <h1>⚡ PRO-REFORMAS</h1>
-  <p>Cálculo técnico orientativo y presupuestos de electricidad, fontanería y climatización</p>
+  <div class="t">⚡ PRO-REFORMAS 💧</div>
+  <div class="s">Electricidad y fontanería: cálculo técnico orientativo y presupuestos en 4 pasos</div>
 </div>
-""", unsafe_allow_html=True)
+"""
+st.markdown(ESTILO, unsafe_allow_html=True)
+
+
+def banda(clase, titulo, etiqueta=""):
+    etq = f'<span class="etq">{etiqueta}</span>' if etiqueta else ""
+    st.markdown(f'<div class="banda b-{clase}"><span>{titulo}</span>{etq}</div>', unsafe_allow_html=True)
+
+
+def kpi(clase, etiqueta, valor, nota="", extra=""):
+    st.markdown(f'<div class="kpi k-{clase} {extra}"><div class="l">{etiqueta}</div>'
+                f'<div class="v">{valor}</div><div class="n">{nota}</div></div>', unsafe_allow_html=True)
+
 
 # --- Estado: valores por defecto (las pestañas siempre se renderizan, así que no se pierden) ---
 DEFAULTS = {
@@ -303,173 +370,226 @@ for clave, valor in DEFAULTS.items():
     st.session_state.setdefault(clave, valor)
 s = st.session_state
 
+CLAVES_ESTANCIAS = ["n_dormitorios", "n_salones", "n_banos", "n_aseos",
+                    "n_cocinas", "n_galerias", "n_terrazas", "n_trasteros", "pasillo_m"]
+PLANTILLAS = {
+    "🏢 Piso 2 hab.": dict(superficie=70.0, n_dormitorios=2, n_salones=1, n_banos=1, n_aseos=0,
+                          n_cocinas=1, n_galerias=0, n_terrazas=1, n_trasteros=0, pasillo_m=5.0),
+    "🏢 Piso 3 hab.": dict(superficie=90.0, n_dormitorios=3, n_salones=1, n_banos=1, n_aseos=1,
+                          n_cocinas=1, n_galerias=1, n_terrazas=1, n_trasteros=0, pasillo_m=8.0),
+    "🏡 Casa 4 hab.": dict(superficie=160.0, n_dormitorios=4, n_salones=1, n_banos=2, n_aseos=1,
+                          n_cocinas=1, n_galerias=1, n_terrazas=2, n_trasteros=1, pasillo_m=12.0),
+    "🧹 Limpiar": dict(superficie=0.0, n_dormitorios=0, n_salones=0, n_banos=0, n_aseos=0,
+                      n_cocinas=0, n_galerias=0, n_terrazas=0, n_trasteros=0, pasillo_m=0.0),
+}
+
+
+def aplicar_plantilla(nombre):
+    for clave, valor in PLANTILLAS[nombre].items():
+        st.session_state[clave] = valor
+
+
+n_estancias = sum(s[k] for k in CLAVES_ESTANCIAS if k.startswith("n_"))
+hay_precios = any(s[k] > 0 for k in DEFAULTS if k.startswith("pu_"))
+filas = partidas(s)
+importe_base = sum(f["Importe (€)"] for f in filas)
+
 # --- Barra lateral ---
 with st.sidebar:
-    st.header("👤 Cliente y obra")
+    st.markdown('<div class="logo">⚡ PRO-REFORMAS 💧</div>', unsafe_allow_html=True)
+    st.markdown("### 👤 Cliente y obra")
     st.text_input("Nombre del cliente / empresa", key="cliente_nombre")
     st.text_input("Dirección de la obra", key="cliente_obra")
     st.number_input("Superficie útil afectada (m²)", min_value=0.0, step=5.0, key="superficie")
-    st.divider()
-    st.header("🔧 Especialidades")
-    st.checkbox("⚡ Electricidad (REBT)", key="inc_elec")
-    st.checkbox("🚰 Fontanería (CTE DB-HS)", key="inc_font")
-    st.checkbox("❄️ Climatización (RITE)", key="inc_clima")
+    st.markdown("### 🔧 Qué incluye el presupuesto")
+    st.checkbox("⚡ Electricidad", key="inc_elec")
+    st.checkbox("💧 Fontanería", key="inc_font")
+    st.checkbox("❄️ Climatización", key="inc_clima")
     st.checkbox("📡 Telecomunicaciones", key="inc_teleco")
     st.checkbox("🏗️ Albañilería auxiliar", key="inc_albanil")
-    st.divider()
-    st.selectbox("Tipo de IVA", [21, 10], key="tipo_iva",
+    st.markdown("### 🏷️ IVA")
+    st.selectbox("Tipo de IVA", [21, 10], key="tipo_iva", label_visibility="collapsed",
                  format_func=lambda x: f"{x}% ({'General' if x == 21 else 'Reducido reforma'})")
     st.caption("El 10 % solo aplica a reformas en vivienda de particulares, con más de 2 años de "
                "antigüedad y con materiales aportados por el contratista ≤ 40 % de la base. "
                "Confírmalo con tu gestor. Canarias, Ceuta y Melilla tienen otros impuestos.")
+    pasos = [("Datos de la obra", bool(s.cliente_nombre.strip()) and s.superficie > 0),
+             ("Estancias", n_estancias > 0),
+             ("Tarifas", hay_precios),
+             ("Presupuesto con importe", importe_base > 0)]
+    hechos = sum(ok for _, ok in pasos)
+    st.markdown("### ✅ Progreso")
+    st.markdown(f'<div class="barra"><div style="width:{hechos * 25}%"></div></div>', unsafe_allow_html=True)
+    for nombre, ok in pasos:
+        st.markdown(f"{'✅' if ok else '⬜'} {nombre}")
 
 t1, t2, t3, t4, t5 = st.tabs(["📋 1. Estancias", "🛠️ 2. Cálculos", "💶 3. Tarifas",
-                              "📊 4. Presupuesto", "📚 5. Biblioteca"])
+                              "📊 4. Presupuesto", "📚 Biblioteca"])
 
 # --- PASO 1: ESTANCIAS ---
 with t1:
-    st.subheader("Estancias y geometría")
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.number_input("🛌 Dormitorios", min_value=0, step=1, key="n_dormitorios")
-        st.number_input("🛋️ Salones / comedores", min_value=0, step=1, key="n_salones")
-    with c2:
-        st.number_input("🛁 Baños (con ducha)", min_value=0, step=1, key="n_banos")
-        st.number_input("🧻 Aseos (sin ducha)", min_value=0, step=1, key="n_aseos")
-    with c3:
-        st.number_input("🍳 Cocinas", min_value=0, step=1, key="n_cocinas")
-        st.number_input("🧺 Galerías / lavaderos", min_value=0, step=1, key="n_galerias")
-    with c4:
-        st.number_input("🌿 Terrazas / balcones", min_value=0, step=1, key="n_terrazas")
-        st.number_input("📦 Trasteros / garajes / otros", min_value=0, step=1, key="n_trasteros")
-    p1, p2, p3 = st.columns(3)
-    p1.number_input("Longitud total de pasillos (m)", min_value=0.0, step=1.0, key="pasillo_m")
-    p2.number_input("Tomas de datos por dormitorio", min_value=0, step=1, key="tomas_datos_dorm")
-    p3.number_input("Tomas de datos por salón", min_value=0, step=1, key="tomas_datos_salon")
-    total = sum(s[k] for k in DEFAULTS if k.startswith("n_"))
-    st.info(f"{total} estancias | {s.superficie:.1f} m² afectados")
+    st.markdown("#### Empieza con una plantilla o rellena las estancias a mano")
+    cols = st.columns(len(PLANTILLAS))
+    for col, nombre in zip(cols, PLANTILLAS):
+        col.button(nombre, on_click=aplicar_plantilla, args=(nombre,), key=f"plantilla_{nombre}")
+
+    seca, humeda = st.columns(2)
+    with seca:
+        banda("elec", "⚡ ZONAS SECAS", "luz y enchufes")
+        a, b = st.columns(2)
+        a.number_input("🛌 Dormitorios", min_value=0, step=1, key="n_dormitorios")
+        b.number_input("🛋️ Salones / comedores", min_value=0, step=1, key="n_salones")
+        a.number_input("🌿 Terrazas / balcones", min_value=0, step=1, key="n_terrazas")
+        b.number_input("📦 Trasteros / garajes", min_value=0, step=1, key="n_trasteros")
+        st.number_input("Longitud total de pasillos (m)", min_value=0.0, step=1.0, key="pasillo_m")
+    with humeda:
+        banda("hidro", "💧 ZONAS HÚMEDAS", "agua y desagües")
+        a, b = st.columns(2)
+        a.number_input("🛁 Baños (con ducha)", min_value=0, step=1, key="n_banos")
+        b.number_input("🧻 Aseos (sin ducha)", min_value=0, step=1, key="n_aseos")
+        a.number_input("🍳 Cocinas", min_value=0, step=1, key="n_cocinas")
+        b.number_input("🧺 Galerías / lavaderos", min_value=0, step=1, key="n_galerias")
+
+    banda("teleco", "📡 RED DE DATOS", "opcional")
+    a, b, _ = st.columns(3)
+    a.number_input("Tomas de datos por dormitorio", min_value=0, step=1, key="tomas_datos_dorm")
+    b.number_input("Tomas de datos por salón", min_value=0, step=1, key="tomas_datos_salon")
+
+    st.info(f"**{n_estancias} estancias** · **{s.superficie:.0f} m²** afectados. "
+            "Recuerda indicar la superficie en la barra lateral.")
+    st.caption("👉 Siguiente: pestaña **2. Cálculos**")
 
 # --- PASO 2: CÁLCULOS ---
 with t2:
-    st.subheader("Dimensionado técnico")
     st.warning("Resultados orientativos. No sustituyen la memoria técnica ni el proyecto de un "
                "instalador autorizado o técnico competente.")
 
-    with st.expander("⚡ Electricidad (REBT)", expanded=True):
-        if not s.inc_elec:
-            st.caption("Capítulo no incluido en el presupuesto (el cálculo sigue disponible).")
-        e1, e2 = st.columns(2)
-        with e1:
-            st.checkbox("Calefacción eléctrica (C8)", key="calefaccion_elec")
-            st.checkbox("Aire acondicionado (C9)", key="aire_acond")
-            st.checkbox("Secadora (C10)", key="secadora")
-        recomendado = grado_recomendado(s.superficie, s.calefaccion_elec, s.aire_acond)
-        with e2:
-            st.selectbox("Grado de electrificación", list(POTENCIAS_PREVISTAS_W), key="grado")
-            opciones = POTENCIAS_PREVISTAS_W[s.grado]
-            if s.potencia_prevista not in opciones:
-                s.potencia_prevista = opciones[0]
-            st.selectbox("Potencia prevista (W)", opciones, key="potencia_prevista")
-        if recomendado == "Elevada" and s.grado == "Básica":
-            st.warning("Con más de 160 m², calefacción eléctrica o aire acondicionado corresponde "
-                       "electrificación elevada.")
-        d1, d2 = st.columns(2)
-        d1.number_input("Longitud de la derivación individual (m)", min_value=1.0, step=1.0,
-                        key="longitud_di")
-        d2.selectbox("Aislamiento del cable", list(CONDUCTIVIDAD_CU), key="aislamiento")
-        try:
-            di = derivacion_individual(s.potencia_prevista, s.longitud_di, s.aislamiento)
-            m1, m2, m3 = st.columns(3)
-            m1.metric("Intensidad", f"{di['intensidad_a']:.1f} A")
-            m2.metric("Sección DI (Cu)", f"{di['seccion_mm2']:g} mm²")
-            m3.metric("Caída de tensión", f"{di['caida_pct']:.2f} %", help="Límite: 1,5 % en DI")
-            st.caption(f"Por caída de tensión: {di['s_caida']:.2f} mm² · por intensidad: "
-                       f"{di['s_int']:g} mm² · mínimo reglamentario: 6 mm².")
-        except ValueError as err:
-            st.error(str(err))
+    # ELECTRICIDAD
+    banda("elec", "⚡ ELECTRICIDAD · REBT", "En el presupuesto" if s.inc_elec else "No incluida")
+    e1, e2 = st.columns(2)
+    with e1:
+        st.checkbox("Calefacción eléctrica (C8)", key="calefaccion_elec")
+        st.checkbox("Aire acondicionado (C9)", key="aire_acond")
+        st.checkbox("Secadora (C10)", key="secadora")
+    recomendado = grado_recomendado(s.superficie, s.calefaccion_elec, s.aire_acond)
+    with e2:
+        st.selectbox("Grado de electrificación", list(POTENCIAS_PREVISTAS_W), key="grado")
+        opciones = POTENCIAS_PREVISTAS_W[s.grado]
+        if s.potencia_prevista not in opciones:
+            s.potencia_prevista = opciones[0]
+        st.selectbox("Potencia prevista (W)", opciones, key="potencia_prevista")
+    if recomendado == "Elevada" and s.grado == "Básica":
+        st.warning("Con más de 160 m², calefacción eléctrica o aire acondicionado corresponde "
+                   "electrificación elevada.")
+    d1, d2 = st.columns(2)
+    d1.number_input("Longitud de la derivación individual (m)", min_value=1.0, step=1.0, key="longitud_di")
+    d2.selectbox("Aislamiento del cable", list(CONDUCTIVIDAD_CU), key="aislamiento")
+    try:
+        di = derivacion_individual(s.potencia_prevista, s.longitud_di, s.aislamiento)
+        k1, k2, k3 = st.columns(3)
+        with k1:
+            kpi("elec", "Intensidad", f"{di['intensidad_a']:.1f} A")
+        with k2:
+            kpi("elec", "Sección derivación (Cu)", f"{di['seccion_mm2']:g} mm²",
+                f"Caída {di['s_caida']:.2f} · intensidad {di['s_int']:g} · mínimo 6")
+        with k3:
+            kpi("elec", "Caída de tensión", f"{di['caida_pct']:.2f} %", "Límite 1,5 % ✔")
+    except ValueError as err:
+        st.error(str(err))
 
-        estancias = {"dormitorios": s.n_dormitorios, "salones": s.n_salones, "banos": s.n_banos,
-                     "aseos": s.n_aseos, "cocinas": s.n_cocinas, "galerias": s.n_galerias,
-                     "terrazas": s.n_terrazas, "trasteros": s.n_trasteros}
-        filas_circ, mec = circuitos(
-            estancias, s.pasillo_m,
-            {"C8": s.calefaccion_elec, "C9": s.aire_acond, "C10": s.secadora})
-        st.markdown("**Circuitos y puntos mínimos (ITC-BT-25, simplificado)**")
-        if filas_circ:
-            st.dataframe(pd.DataFrame(filas_circ), hide_index=True)
-            st.caption(f"Puntos de luz: {mec['puntos_luz']} · tomas C2: {mec['tomas_c2']} · "
-                       f"tomas C5: {mec['tomas_c5']}. En salones y pasillos los mínimos suben con la "
-                       "superficie: ajusta según la tabla 2 de la ITC-BT-25.")
-        else:
-            st.info("Añade estancias en el Paso 1 para ver los circuitos.")
+    estancias = {"dormitorios": s.n_dormitorios, "salones": s.n_salones, "banos": s.n_banos,
+                 "aseos": s.n_aseos, "cocinas": s.n_cocinas, "galerias": s.n_galerias,
+                 "terrazas": s.n_terrazas, "trasteros": s.n_trasteros}
+    filas_circ, mec = circuitos(
+        estancias, s.pasillo_m, {"C8": s.calefaccion_elec, "C9": s.aire_acond, "C10": s.secadora})
+    st.markdown("**Circuitos y puntos mínimos** (ITC-BT-25, simplificado)")
+    if filas_circ:
+        st.dataframe(pd.DataFrame(filas_circ), hide_index=True)
+        st.caption(f"Puntos de luz: {mec['puntos_luz']} · tomas C2: {mec['tomas_c2']} · "
+                   f"tomas C5: {mec['tomas_c5']}. En salones y pasillos los mínimos suben con la "
+                   "superficie: ajusta según la tabla 2 de la ITC-BT-25.")
+    else:
+        st.info("Añade estancias en el Paso 1 para ver los circuitos.")
 
-    with st.expander("🚰 Fontanería (CTE DB-HS4)", expanded=True):
-        if not s.inc_font:
-            st.caption("Capítulo no incluido en el presupuesto (el cálculo sigue disponible).")
-        st.slider("Velocidad de cálculo (m/s)", 0.5, 2.0, step=0.1, key="velocidad_ms")
-        h = hidraulica(s.n_banos, s.n_aseos, s.n_cocinas, s.n_galerias, s.velocidad_ms)
-        if h["n_aparatos"]:
-            f1, f2, f3, f4 = st.columns(4)
-            f1.metric("Aparatos", h["n_aparatos"])
-            f2.metric("Caudal instalado (fría)", f"{h['q_fria']:.2f} L/s")
-            f3.metric("Caudal de diseño", f"{h['q_diseno']:.2f} L/s",
-                      help=f"Coeficiente de simultaneidad {h['kn']:.2f} = 1/√(n−1)")
-            f4.metric("Ø interior mín. general", f"{h['diametro_mm']:.1f} mm")
-            st.caption("Caudales por aparato según tabla 2.1 del DB-HS4. Falta dimensionar los "
-                       "ramales y comprobar presión (mín. 100 kPa en grifos, 150 kPa en fluxores y "
-                       "calentadores; máx. 500 kPa).")
-        else:
-            st.info("Configura baños, aseos o cocinas en el Paso 1.")
+    # FONTANERÍA
+    banda("hidro", "💧 FONTANERÍA · CTE DB-HS4", "En el presupuesto" if s.inc_font else "No incluida")
+    st.number_input("Velocidad de cálculo del agua (m/s)", min_value=0.5, max_value=2.0, step=0.1,
+                    key="velocidad_ms")
+    h = hidraulica(s.n_banos, s.n_aseos, s.n_cocinas, s.n_galerias, s.velocidad_ms)
+    if h["n_aparatos"]:
+        k1, k2, k3, k4 = st.columns(4)
+        with k1:
+            kpi("hidro", "Aparatos", h["n_aparatos"])
+        with k2:
+            kpi("hidro", "Caudal instalado", f"{h['q_fria']:.2f} L/s", "Agua fría")
+        with k3:
+            kpi("hidro", "Caudal de diseño", f"{h['q_diseno']:.2f} L/s", f"Simultaneidad {h['kn']:.2f}")
+        with k4:
+            kpi("hidro", "Ø interior mínimo", f"{h['diametro_mm']:.1f} mm", "Tubería general")
+        st.caption("Caudales por aparato según tabla 2.1 del DB-HS4. Falta dimensionar los ramales y "
+                   "comprobar presión (mín. 100 kPa en grifos, 150 kPa en fluxores y calentadores; "
+                   "máx. 500 kPa).")
+    else:
+        st.info("Añade baños, aseos o cocinas en el Paso 1.")
 
-    with st.expander("❄️ Climatización (estimación por ratio)", expanded=True):
-        if not s.inc_clima:
-            st.caption("Capítulo no incluido en el presupuesto (el cálculo sigue disponible).")
-        if s.superficie > 0:
-            st.selectbox("Aislamiento térmico del inmueble", list(RATIOS_W_M2),
-                         key="aislamiento_termico")
-            cl = climatizacion(s.superficie, calc_w_m2(s))
-            st.metric("Potencia térmica estimada", f"{cl['kw']:.2f} kW", f"{cl['kcal_h']:.0f} kcal/h")
-            st.caption("Estimación orientativa por ratio: no es un cálculo de cargas según RITE.")
-        else:
-            st.info("Introduce la superficie en el menú lateral.")
+    # CLIMATIZACIÓN
+    banda("clima", "❄️ CLIMATIZACIÓN · estimación", "En el presupuesto" if s.inc_clima else "No incluida")
+    if s.superficie > 0:
+        st.selectbox("Aislamiento térmico del inmueble", list(RATIOS_W_M2), key="aislamiento_termico")
+        cl = climatizacion(s.superficie, calc_w_m2(s))
+        k1, k2, _ = st.columns(3)
+        with k1:
+            kpi("clima", "Potencia térmica", f"{cl['kw']:.2f} kW")
+        with k2:
+            kpi("clima", "Equivalente", f"{cl['kcal_h']:.0f} kcal/h")
+        st.caption("Estimación por ratio: no es un cálculo de cargas según RITE.")
+    else:
+        st.info("Introduce la superficie en la barra lateral.")
+    st.caption("👉 Siguiente: pestaña **3. Tarifas**")
 
 # --- PASO 3: TARIFAS ---
 with t3:
-    st.subheader("Cuadro de precios unitarios")
-    st.caption("Todos los precios parten de 0 €: define las tarifas acordadas (sin IVA).")
+    st.markdown("#### Pon tus precios (sin IVA). Todos parten de 0 €")
     a, b = st.columns(2)
     with a:
-        st.markdown("#### ⚡ Electricidad")
+        banda("elec", "⚡ ELECTRICIDAD")
         st.number_input("Instalación eléctrica general (€/m²)", min_value=0.0, step=5.0, key="pu_elec_m2")
         st.number_input("Cuadro general y protecciones (€/ud)", min_value=0.0, step=25.0, key="pu_elec_cgmp")
-        st.markdown("#### 🚰 Fontanería")
+        banda("hidro", "💧 FONTANERÍA")
         st.number_input("Baño completo (€/ud)", min_value=0.0, step=50.0, key="pu_font_bano")
         st.number_input("Aseo (€/ud)", min_value=0.0, step=50.0, key="pu_font_aseo")
         st.number_input("Cocina (€/ud)", min_value=0.0, step=50.0, key="pu_font_cocina")
     with b:
-        st.markdown("#### ❄️ Climatización")
+        banda("clima", "❄️ CLIMATIZACIÓN")
         st.number_input("Instalación (€/kW)", min_value=0.0, step=25.0, key="pu_clima_kw")
-        st.markdown("#### 📡 Telecomunicaciones")
+        banda("teleco", "📡 TELECOMUNICACIONES")
         st.number_input("Toma de datos RJ45 Cat6 (€/toma)", min_value=0.0, step=5.0, key="pu_teleco_toma")
-        st.markdown("#### 🏗️ Albañilería")
+        banda("alba", "🏗️ ALBAÑILERÍA")
         st.number_input("Rozas, ayudas y remates (€/m²)", min_value=0.0, step=5.0, key="pu_albanil_m2")
+    st.caption("👉 Siguiente: pestaña **4. Presupuesto**")
 
 # --- PASO 4: PRESUPUESTO ---
 with t4:
-    st.subheader("Mediciones y presupuesto")
-    filas = partidas(s)
-    if filas:
-        df = pd.DataFrame(filas)
-        st.dataframe(df, hide_index=True, column_config={
+    if not filas:
+        st.info("Marca al menos una especialidad en la barra lateral.")
+    else:
+        if not hay_precios:
+            st.warning("Aún no has puesto precios. Ve a la pestaña **3. Tarifas**.")
+        if s.superficie <= 0 and n_estancias == 0:
+            st.warning("Faltan la superficie y las estancias. Empieza en la pestaña **1. Estancias**.")
+        st.dataframe(pd.DataFrame(filas), hide_index=True, column_config={
             "Cantidad": st.column_config.NumberColumn(format="%.2f"),
             "Precio unit. (€)": st.column_config.NumberColumn(format="%.2f €"),
             "Importe (€)": st.column_config.NumberColumn(format="%.2f €"),
         })
         base, iva, total_pres = totales(filas, s.tipo_iva)
         r1, r2, r3 = st.columns(3)
-        r1.metric("Base imponible", f"{base:,.2f} €")
-        r2.metric(f"IVA ({s.tipo_iva}%)", f"{iva:,.2f} €")
-        r3.metric("TOTAL", f"{total_pres:,.2f} €")
+        with r1:
+            kpi("marino", "Base imponible", f"{base:,.2f} €")
+        with r2:
+            kpi("hidro", f"IVA ({s.tipo_iva} %)", f"{iva:,.2f} €")
+        with r3:
+            kpi("elec", "TOTAL", f"{total_pres:,.2f} €", extra="total")
         nombre = re.sub(r"[^\w\-]+", "_", s.cliente_nombre.strip()) or "Reforma"
         if HAY_OPENPYXL:
             st.download_button(
@@ -479,13 +599,10 @@ with t4:
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         else:
             st.warning("Para descargar el Excel, añade la línea 'openpyxl' al archivo requirements.txt.")
-    else:
-        st.info("Selecciona al menos una especialidad en el menú lateral.")
 
-# --- PASO 5: BIBLIOTECA ---
+# --- BIBLIOTECA ---
 with t5:
-    st.subheader("Referencias normativas")
-    n1, n2, n3, n4 = st.tabs(["⚡ REBT", "🚰 CTE DB-HS", "❄️ RITE", "📡 Telecomunicaciones"])
+    n1, n2, n3, n4 = st.tabs(["⚡ REBT", "💧 CTE DB-HS", "❄️ RITE", "📡 Telecomunicaciones"])
     with n1:
         st.markdown("- **ITC-BT-25:** circuitos C1 (iluminación), C2 (tomas generales), C3 (cocina y "
                     "horno), C4 (lavadora, lavavajillas, termo), C5 (baños y auxiliares de cocina); "
