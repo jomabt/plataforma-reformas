@@ -21,6 +21,10 @@ try:
 except ImportError:
     HAY_OPENPYXL = False
 
+# Estado de la normativa que usa la app. Actualízalo cada vez que revises el BOE.
+NORMATIVA_FECHA = "octubre de 2026"
+NORMATIVA_APLICADA = "REBT (RD 842/2002) · CTE DB-HS4 · RITE (RD 1027/2007)"
+
 
 # ----------------------------------------------------------------------------
 # ELECTRICIDAD (REBT)
@@ -33,7 +37,17 @@ SECCIONES_MM2 = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50]
 # con XLPE la admisible real es mayor. Verificar con ITC-BT-19, tabla 1.
 I_ADMISIBLE_A = {1.5: 15, 2.5: 21, 4: 27, 6: 36, 10: 50, 16: 66, 25: 84, 35: 104, 50: 125}
 SECCION_MIN_DI_MM2 = 6  # ITC-BT-15
+
+# Caída de tensión máxima en la derivación individual según el tipo de suministro (ITC-BT-15).
+CAIDA_DI_PCT = {
+    "Contadores totalmente concentrados (1 %)": 1.0,
+    "Contadores en más de un lugar (0,5 %)": 0.5,
+    "Usuario único, sin línea general (1,5 %)": 1.5,
+}
+SUMINISTRO_DI_DEFECTO = "Contadores totalmente concentrados (1 %)"
+
 POTENCIAS_PREVISTAS_W = {"Básica": [5750], "Elevada": [9200, 11500, 14490]}
+IGA_ESTANDAR_A = [10, 16, 20, 25, 32, 40, 50, 63]
 
 # Circuitos (ITC-BT-25): descripción, PIA (A), sección (mm²), tubo (mm)
 CIRCUITOS = {
@@ -49,8 +63,10 @@ CIRCUITOS = {
 MAX_PUNTOS = {"C1": 30, "C2": 20, "C5": 6}
 
 # Mínimos SIMPLIFICADOS por estancia: (puntos de luz, tomas C2, tomas C5).
-# En salones y pasillos aumentan con la superficie/longitud (ITC-BT-25, tabla 2).
+# En salones (si se indica su superficie) y pasillos se ajustan por superficie/longitud
+# (ITC-BT-25, tabla 2).
 MINIMOS_ESTANCIA = {
+    "vestibulos": (1, 1, 0),
     "dormitorios": (1, 3, 0),
     "salones": (1, 3, 0),
     "banos": (1, 0, 1),
@@ -69,7 +85,7 @@ def grado_recomendado(superficie_m2: float, calefaccion: bool, aire: bool) -> st
 
 def derivacion_individual(potencia_w: float, longitud_m: float,
                           aislamiento: str = "PVC (70 °C)", cos_phi: float = 1.0,
-                          caida_max_pct: float = 1.5) -> dict:
+                          caida_max_pct: float = 1.0) -> dict:
     """Sección de la derivación individual (monofásica): máximo entre caída de tensión,
     intensidad admisible y el mínimo reglamentario de 6 mm²."""
     if potencia_w <= 0 or longitud_m <= 0:
@@ -87,14 +103,21 @@ def derivacion_individual(potencia_w: float, longitud_m: float,
         raise ValueError("Sección > 50 mm²: revisar longitud/potencia o usar otra solución.")
     caida_pct = (2 * longitud_m * potencia_w / (gamma * s_final * TENSION_V)) / TENSION_V * 100
     return {"intensidad_a": intensidad, "s_caida": s_caida, "s_int": s_int,
-            "seccion_mm2": s_final, "caida_pct": caida_pct}
+            "seccion_mm2": s_final, "caida_pct": caida_pct,
+            "caida_max_pct": caida_max_pct, "cumple": caida_pct <= caida_max_pct + 1e-9}
 
 
-def circuitos(estancias: dict, pasillo_m: float = 0.0, extras: dict | None = None):
+def circuitos(estancias: dict, pasillo_m: float = 0.0, extras: dict | None = None,
+              sup_salon_m2: float = 0.0, superficie_m2: float = 0.0, grado: str = "Básica"):
     """Circuitos y puntos mínimos. Devuelve (filas_tabla, resumen_puntos)."""
     extras = extras or {}
     luz = c2 = c5 = 0
     for tipo, n in estancias.items():
+        if tipo == "salones" and sup_salon_m2 > 0:
+            # Salón: 1 punto de luz (2 si > 10 m²); 1 toma por cada 6 m² (mínimo 3).
+            luz += n * (1 if sup_salon_m2 <= 10 else 2)
+            c2 += n * max(3, math.ceil(sup_salon_m2 / 6))
+            continue
         l, t2, t5 = MINIMOS_ESTANCIA[tipo]
         luz, c2, c5 = luz + l * n, c2 + t2 * n, c5 + t5 * n
     if pasillo_m > 0:  # 1 punto de luz y 1 toma por cada 5 m de pasillo
@@ -111,6 +134,12 @@ def circuitos(estancias: dict, pasillo_m: float = 0.0, extras: dict | None = Non
         "C9": 1 if extras.get("C9") else 0,
         "C10": 1 if extras.get("C10") else 0,
     }
+    # Electrificación elevada con más de 160 m²: circuito C2 adicional (C7).
+    c7_por_superficie = False
+    if grado == "Elevada" and superficie_m2 > 160 and 0 < n_circ["C2"] < 2:
+        n_circ["C2"] = 2
+        c7_por_superficie = True
+
     puntos = {"C1": luz, "C2": c2, "C5": c5}
     filas = []
     for cod, n in n_circ.items():
@@ -119,7 +148,30 @@ def circuitos(estancias: dict, pasillo_m: float = 0.0, extras: dict | None = Non
             filas.append({"Circuito": cod, "Descripción": desc, "Nº circuitos": n,
                           "PIA (A)": pia, "Sección (mm²)": seccion, "Tubo (mm)": tubo,
                           "Puntos previstos": puntos.get(cod, "—")})
-    return filas, {"puntos_luz": luz, "tomas_c2": c2, "tomas_c5": c5}
+    return filas, {"puntos_luz": luz, "tomas_c2": c2, "tomas_c5": c5,
+                   "c7_por_superficie": c7_por_superficie}
+
+
+def protecciones(potencia_w: float, n_circuitos: int, con_spd: bool) -> list[dict]:
+    """Protecciones orientativas del cuadro: IGA, diferenciales, PIA y sobretensiones."""
+    intensidad = potencia_w / TENSION_V
+    iga = next((a for a in IGA_ESTANDAR_A if a >= intensidad - 1e-6), None)
+    n_dif = math.ceil(n_circuitos / 5) if n_circuitos else 0
+    return [
+        {"Elemento": "IGA (magnetotérmico general)",
+         "Valor": f"{iga} A" if iga else "Revisar (fuera de tabla)",
+         "Observaciones": f"Para {potencia_w:.0f} W a 230 V ({intensidad:.1f} A)"},
+        {"Elemento": "Diferenciales 30 mA", "Valor": f"{n_dif} ud",
+         "Observaciones": "Máximo 5 circuitos por diferencial; intensidad ≥ 25 A; tipo A "
+                          "recomendado (el tipo AC dejaría de ser válido con el nuevo REBT, "
+                          "aún sin publicar)"},
+        {"Elemento": "PIA por circuito", "Valor": f"{n_circuitos} ud",
+         "Observaciones": "Calibres en la tabla de circuitos"},
+        {"Elemento": "Protector contra sobretensiones",
+         "Valor": "Incluido" if con_spd else "No incluido",
+         "Observaciones": "Hoy depende del tipo de instalación y del riesgo (ITC-BT-23); el "
+                          "borrador del nuevo REBT lo haría obligatorio"},
+    ]
 
 
 # ----------------------------------------------------------------------------
@@ -179,6 +231,8 @@ def partidas(d) -> list[dict]:
         add("Electricidad", "Instalación eléctrica general", "m²", sup, d["pu_elec_m2"])
         add("Electricidad", "Cuadro general de mando y protección", "ud",
             1 if sup > 0 else 0, d["pu_elec_cgmp"])
+        if d["incluir_spd"]:
+            add("Electricidad", "Protector contra sobretensiones", "ud", 1, d["pu_elec_spd"])
     if d["inc_font"]:
         add("Fontanería", "Instalación de baño completo", "ud", d["n_banos"], d["pu_font_bano"])
         add("Fontanería", "Instalación de aseo", "ud", d["n_aseos"], d["pu_font_aseo"])
@@ -263,6 +317,8 @@ def presupuesto_excel(filas: list[dict], cliente: str, obra: str,
 
     ws.cell(t + 4, 1, "Las celdas de Cantidad, Precio y % de IVA son editables; "
                       "los importes se recalculan.").font = Font(name=FUENTE, italic=True)
+    ws.cell(t + 5, 1, f"Estimación orientativa con la normativa a {NORMATIVA_FECHA}; no sustituye "
+                      "proyecto ni memoria técnica.").font = Font(name=FUENTE, italic=True)
 
     for col, ancho in zip("ABCDEF", (22, 46, 8, 12, 18, 16)):
         ws.column_dimensions[col].width = ancho
@@ -380,30 +436,36 @@ def kpi(clase, etiqueta, valor, nota="", extra=""):
 DEFAULTS = {
     "cliente_nombre": "", "cliente_obra": "", "superficie": 0.0, "tipo_iva": 21,
     "inc_elec": True, "inc_font": True, "inc_clima": False, "inc_teleco": False, "inc_albanil": False,
-    "n_dormitorios": 0, "n_salones": 0, "n_banos": 0, "n_aseos": 0,
+    "n_vestibulos": 0, "n_dormitorios": 0, "n_salones": 0, "n_banos": 0, "n_aseos": 0,
     "n_cocinas": 0, "n_galerias": 0, "n_terrazas": 0, "n_trasteros": 0,
-    "pasillo_m": 0.0, "tomas_datos_dorm": 1, "tomas_datos_salon": 2,
+    "pasillo_m": 0.0, "sup_salon_m2": 0.0, "tomas_datos_dorm": 1, "tomas_datos_salon": 2,
     "grado": "Básica", "potencia_prevista": 5750, "longitud_di": 15.0,
-    "aislamiento": "PVC (70 °C)", "calefaccion_elec": False, "aire_acond": False, "secadora": False,
+    "aislamiento": "PVC (70 °C)", "suministro_di": SUMINISTRO_DI_DEFECTO,
+    "calefaccion_elec": False, "aire_acond": False, "secadora": False, "incluir_spd": False,
     "velocidad_ms": 1.5, "aislamiento_termico": "Media (100 W/m²)",
-    "pu_elec_m2": 0.0, "pu_elec_cgmp": 0.0, "pu_font_bano": 0.0, "pu_font_aseo": 0.0,
-    "pu_font_cocina": 0.0, "pu_clima_kw": 0.0, "pu_teleco_toma": 0.0, "pu_albanil_m2": 0.0,
+    "pu_elec_m2": 0.0, "pu_elec_cgmp": 0.0, "pu_elec_spd": 0.0, "pu_font_bano": 0.0,
+    "pu_font_aseo": 0.0, "pu_font_cocina": 0.0, "pu_clima_kw": 0.0, "pu_teleco_toma": 0.0,
+    "pu_albanil_m2": 0.0,
 }
 for clave, valor in DEFAULTS.items():
     st.session_state.setdefault(clave, valor)
 s = st.session_state
 
-CLAVES_ESTANCIAS = ["n_dormitorios", "n_salones", "n_banos", "n_aseos",
+CLAVES_ESTANCIAS = ["n_vestibulos", "n_dormitorios", "n_salones", "n_banos", "n_aseos",
                     "n_cocinas", "n_galerias", "n_terrazas", "n_trasteros", "pasillo_m"]
 PLANTILLAS = {
-    "🏢 Piso 2 hab.": dict(superficie=70.0, n_dormitorios=2, n_salones=1, n_banos=1, n_aseos=0,
-                          n_cocinas=1, n_galerias=0, n_terrazas=1, n_trasteros=0, pasillo_m=5.0),
-    "🏢 Piso 3 hab.": dict(superficie=90.0, n_dormitorios=3, n_salones=1, n_banos=1, n_aseos=1,
-                          n_cocinas=1, n_galerias=1, n_terrazas=1, n_trasteros=0, pasillo_m=8.0),
-    "🏡 Casa 4 hab.": dict(superficie=160.0, n_dormitorios=4, n_salones=1, n_banos=2, n_aseos=1,
-                          n_cocinas=1, n_galerias=1, n_terrazas=2, n_trasteros=1, pasillo_m=12.0),
-    "🧹 Limpiar": dict(superficie=0.0, n_dormitorios=0, n_salones=0, n_banos=0, n_aseos=0,
-                      n_cocinas=0, n_galerias=0, n_terrazas=0, n_trasteros=0, pasillo_m=0.0),
+    "🏢 Piso 2 hab.": dict(superficie=70.0, n_vestibulos=1, n_dormitorios=2, n_salones=1, n_banos=1,
+                          n_aseos=0, n_cocinas=1, n_galerias=0, n_terrazas=1, n_trasteros=0,
+                          pasillo_m=5.0),
+    "🏢 Piso 3 hab.": dict(superficie=90.0, n_vestibulos=1, n_dormitorios=3, n_salones=1, n_banos=1,
+                          n_aseos=1, n_cocinas=1, n_galerias=1, n_terrazas=1, n_trasteros=0,
+                          pasillo_m=8.0),
+    "🏡 Casa 4 hab.": dict(superficie=160.0, n_vestibulos=1, n_dormitorios=4, n_salones=1, n_banos=2,
+                          n_aseos=1, n_cocinas=1, n_galerias=1, n_terrazas=2, n_trasteros=1,
+                          pasillo_m=12.0),
+    "🧹 Limpiar": dict(superficie=0.0, n_vestibulos=0, n_dormitorios=0, n_salones=0, n_banos=0,
+                      n_aseos=0, n_cocinas=0, n_galerias=0, n_terrazas=0, n_trasteros=0,
+                      pasillo_m=0.0, sup_salon_m2=0.0),
 }
 
 
@@ -462,6 +524,9 @@ with t1:
         a, b = st.columns(2)
         a.number_input("🛌 Dormitorios", min_value=0, step=1, key="n_dormitorios")
         b.number_input("🛋️ Salones / comedores", min_value=0, step=1, key="n_salones")
+        a.number_input("🚪 Vestíbulos / accesos", min_value=0, step=1, key="n_vestibulos")
+        b.number_input("Superficie por salón (m²)", min_value=0.0, step=1.0, key="sup_salon_m2",
+                       help="Opcional. Si la indicas, se ajustan los puntos de luz y tomas del salón.")
         a.number_input("🌿 Terrazas / balcones", min_value=0, step=1, key="n_terrazas")
         b.number_input("📦 Trasteros / garajes", min_value=0, step=1, key="n_trasteros")
         st.number_input("Longitud total de pasillos (m)", min_value=0.0, step=1.0, key="pasillo_m")
@@ -486,6 +551,9 @@ with t1:
 with t2:
     st.warning("Resultados orientativos. No sustituyen la memoria técnica ni el proyecto de un "
                "instalador autorizado o técnico competente.")
+    st.caption(f"Normativa de referencia (estado a {NORMATIVA_FECHA}): {NORMATIVA_APLICADA}. "
+               "La revisión del REBT no estaba publicada en el BOE a esa fecha y hay "
+               "modificaciones del RITE y del CTE anunciadas: comprueba el BOE antes de cada proyecto.")
 
     # ELECTRICIDAD
     banda("elec", "⚡ ELECTRICIDAD · REBT", "En el presupuesto" if s.inc_elec else "No incluida")
@@ -494,6 +562,7 @@ with t2:
         st.checkbox("Calefacción eléctrica (C8)", key="calefaccion_elec")
         st.checkbox("Aire acondicionado (C9)", key="aire_acond")
         st.checkbox("Secadora (C10)", key="secadora")
+        st.checkbox("Protector contra sobretensiones en el cuadro", key="incluir_spd")
     recomendado = grado_recomendado(s.superficie, s.calefaccion_elec, s.aire_acond)
     with e2:
         st.selectbox("Grado de electrificación", list(POTENCIAS_PREVISTAS_W), key="grado")
@@ -504,11 +573,20 @@ with t2:
     if recomendado == "Elevada" and s.grado == "Básica":
         st.warning("Con más de 160 m², calefacción eléctrica o aire acondicionado corresponde "
                    "electrificación elevada.")
-    d1, d2 = st.columns(2)
+    if not s.incluir_spd:
+        st.info("El borrador del nuevo REBT (sin publicar a " + NORMATIVA_FECHA + ") haría "
+                "obligatoria la protección contra sobretensiones; hoy depende de la instalación "
+                "(ITC-BT-23).")
+    d1, d2, d3 = st.columns(3)
     d1.number_input("Longitud de la derivación individual (m)", min_value=1.0, step=1.0, key="longitud_di")
     d2.selectbox("Aislamiento del cable", list(CONDUCTIVIDAD_CU), key="aislamiento")
+    d3.selectbox("Suministro (límite de caída de tensión)", list(CAIDA_DI_PCT), key="suministro_di")
+    st.caption("En una reforma la derivación individual suele estar ya instalada: usa este cálculo "
+               "para comprobar si la existente es suficiente.")
+    limite_caida = CAIDA_DI_PCT[s.suministro_di]
     try:
-        di = derivacion_individual(s.potencia_prevista, s.longitud_di, s.aislamiento)
+        di = derivacion_individual(s.potencia_prevista, s.longitud_di, s.aislamiento,
+                                   caida_max_pct=limite_caida)
         k1, k2, k3 = st.columns(3)
         with k1:
             kpi("elec", "Intensidad", f"{di['intensidad_a']:.1f} A")
@@ -516,21 +594,34 @@ with t2:
             kpi("elec", "Sección derivación (Cu)", f"{di['seccion_mm2']:g} mm²",
                 f"Caída {di['s_caida']:.2f} · intensidad {di['s_int']:g} · mínimo 6")
         with k3:
-            kpi("elec", "Caída de tensión", f"{di['caida_pct']:.2f} %", "Límite 1,5 % ✔")
+            limite_txt = f"{limite_caida:g}".replace(".", ",")
+            kpi("elec", "Caída de tensión", f"{di['caida_pct']:.2f} %",
+                f"Límite {limite_txt} % {'✔' if di['cumple'] else '✘'}")
     except ValueError as err:
         st.error(str(err))
 
-    estancias = {"dormitorios": s.n_dormitorios, "salones": s.n_salones, "banos": s.n_banos,
-                 "aseos": s.n_aseos, "cocinas": s.n_cocinas, "galerias": s.n_galerias,
+    estancias = {"vestibulos": s.n_vestibulos, "dormitorios": s.n_dormitorios,
+                 "salones": s.n_salones, "banos": s.n_banos, "aseos": s.n_aseos,
+                 "cocinas": s.n_cocinas, "galerias": s.n_galerias,
                  "terrazas": s.n_terrazas, "trasteros": s.n_trasteros}
     filas_circ, mec = circuitos(
-        estancias, s.pasillo_m, {"C8": s.calefaccion_elec, "C9": s.aire_acond, "C10": s.secadora})
+        estancias, s.pasillo_m, {"C8": s.calefaccion_elec, "C9": s.aire_acond, "C10": s.secadora},
+        sup_salon_m2=s.sup_salon_m2, superficie_m2=s.superficie, grado=s.grado)
     st.markdown("**Circuitos y puntos mínimos** (ITC-BT-25, simplificado)")
     if filas_circ:
         tabla(pd.DataFrame(filas_circ))
         st.caption(f"Puntos de luz: {mec['puntos_luz']} · tomas C2: {mec['tomas_c2']} · "
-                   f"tomas C5: {mec['tomas_c5']}. En salones y pasillos los mínimos suben con la "
-                   "superficie: ajusta según la tabla 2 de la ITC-BT-25.")
+                   f"tomas C5: {mec['tomas_c5']}. Si indicas la superficie del salón, sus mínimos "
+                   "se ajustan; en pasillos se calculan por longitud. Revisa el resto con la tabla 2 "
+                   "de la ITC-BT-25.")
+        if mec["c7_por_superficie"]:
+            st.caption("Con electrificación elevada y más de 160 m² se prevé un circuito C2 "
+                       "adicional (C7).")
+        st.markdown("**Protecciones del cuadro** (orientativo)")
+        n_circuitos_total = sum(f["Nº circuitos"] for f in filas_circ)
+        tabla(pd.DataFrame(protecciones(s.potencia_prevista, n_circuitos_total, s.incluir_spd)))
+        st.caption("Confirma calibres y número de diferenciales con la ITC-BT-25 y el esquema "
+                   "real del cuadro.")
     else:
         st.info("Añade estancias en el Paso 1 para ver los circuitos.")
 
@@ -578,6 +669,7 @@ with t3:
         banda("elec", "⚡ ELECTRICIDAD")
         st.number_input("Instalación eléctrica general (€/m²)", min_value=0.0, step=5.0, key="pu_elec_m2")
         st.number_input("Cuadro general y protecciones (€/ud)", min_value=0.0, step=25.0, key="pu_elec_cgmp")
+        st.number_input("Protector contra sobretensiones (€/ud)", min_value=0.0, step=10.0, key="pu_elec_spd")
         banda("hidro", "💧 FONTANERÍA")
         st.number_input("Baño completo (€/ud)", min_value=0.0, step=50.0, key="pu_font_bano")
         st.number_input("Aseo (€/ud)", min_value=0.0, step=50.0, key="pu_font_aseo")
@@ -627,10 +719,15 @@ with t5:
     with n1:
         st.markdown("- **ITC-BT-25:** circuitos C1 (iluminación), C2 (tomas generales), C3 (cocina y "
                     "horno), C4 (lavadora, lavavajillas, termo), C5 (baños y auxiliares de cocina); "
-                    "en electrificación elevada, C8 a C12.\n"
+                    "en electrificación elevada, C8 a C12, y un C2 adicional (C7) con más de 160 m².\n"
                     "- **ITC-BT-15:** derivación individual de 6 mm² como mínimo.\n"
-                    "- **Caída de tensión:** 1,5 % en derivación individual; 3 % en la instalación "
-                    "interior de viviendas.")
+                    "- **Caída de tensión en la derivación individual (ITC-BT-15):** 0,5 % con "
+                    "contadores en más de un lugar, 1 % con contadores totalmente concentrados y "
+                    "1,5 % para un único usuario sin línea general de alimentación. En la "
+                    "instalación interior de viviendas, 3 % (ITC-BT-19).\n"
+                    f"- **Estado a {NORMATIVA_FECHA}:** vigente el RD 842/2002. La revisión del "
+                    "REBT (diferenciales tipo AC, sobretensiones, ITC-BT-53) no estaba publicada "
+                    "en el BOE.")
     with n2:
         st.markdown("- **DB-HS4, tabla 2.1:** lavabo 0,10 · ducha 0,20 · fregadero 0,20 · "
                     "lavavajillas 0,15 · lavadora 0,20 · inodoro con cisterna 0,10 (L/s, agua fría).\n"
@@ -638,7 +735,9 @@ with t5:
                     "máximo 500 kPa.\n- **DB-HS5:** evacuación de aguas.")
     with n3:
         st.markdown("- **RITE (RD 1027/2007):** regulación por termostato, eficiencia energética y "
-                    "mantenimiento de instalaciones térmicas.")
+                    "mantenimiento de instalaciones térmicas.\n"
+                    f"- **Estado a {NORMATIVA_FECHA}:** modificaciones del RITE y del CTE anunciadas; "
+                    "comprueba el BOE antes de cada proyecto.")
     with n4:
         st.markdown("- **Reglamento ICT (RD 346/2011):** infraestructuras comunes de telecomunicaciones. "
                     "La red interior de datos (Cat6) se presupuesta por tomas.")
