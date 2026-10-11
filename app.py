@@ -278,7 +278,10 @@ st.set_page_config(page_title="PRO-REFORMAS | Electro·Hidro", page_icon="⚡", 
 ESTILO = """
 <style>
 .stApp{background:#F3F8FC;}
-.block-container{padding-top:1.2rem;max-width:1250px;}
+[data-testid="stMainBlockContainer"],.block-container{padding-top:4.5rem !important;max-width:1250px;}
+header[data-testid="stHeader"]{background:#0B2545 !important;}
+header[data-testid="stHeader"] :is(button,a,span,p){color:#EAF4FB !important;}
+header[data-testid="stHeader"] svg{fill:#EAF4FB !important;}
 [data-testid="stMain"] :is(p,li,h1,h2,h3,h4,label){color:#10243E;}
 [data-testid="stAlert"] *{color:#10243E !important;}
 
@@ -310,27 +313,42 @@ ESTILO = """
 .kpi.total .l,.kpi.total .v,.kpi.total .n{color:#0B2545 !important;}
 
 /* Pestañas */
-button[data-baseweb="tab"] p{font-weight:700;font-size:1.02rem;}
-button[data-baseweb="tab"][aria-selected="true"] p{color:#0B5E7E !important;}
+button[role="tab"] p{font-weight:700;font-size:1.02rem;}
+button[role="tab"][aria-selected="true"]{border-bottom:4px solid #FFC400 !important;}
+button[role="tab"][aria-selected="true"] p{color:#0B5E7E !important;}
 div[data-baseweb="tab-highlight"]{background:#FFC400 !important;height:4px !important;}
 
 /* Botones */
 .stButton>button,.stDownloadButton>button{background:#FFC400;color:#0B2545 !important;border:none;
-  font-weight:800;border-radius:10px;width:100%;}
+  font-weight:800;border-radius:10px;width:100% !important;}
 .stButton>button:hover,.stDownloadButton>button:hover{background:#E6AF00;color:#000 !important;}
 
 /* Campos */
-[data-baseweb="input"],[data-baseweb="select"]>div{background:#FFFFFF !important;
+.stApp :is(input,textarea){background:#FFFFFF !important;color:#10243E !important;
+  -webkit-text-fill-color:#10243E !important;caret-color:#10243E;}
+.stApp div:has(> input:not([type="checkbox"]):not([type="radio"])),
+.stApp div:has(> div > input:not([type="checkbox"]):not([type="radio"])),
+[data-baseweb="input"],[data-baseweb="base-input"],[data-baseweb="select"]>div{background:#FFFFFF !important;}
+[data-testid="stNumberInputContainer"],[data-testid="stTextInputRootElement"],[data-baseweb="select"]>div{
   border:2px solid #9BC4DA !important;border-radius:8px !important;}
-[data-baseweb="input"] input,[data-baseweb="select"] *{color:#10243E !important;}
+[data-baseweb="select"] *{color:#10243E !important;}
+[data-testid="stNumberInputStepUp"],[data-testid="stNumberInputStepDown"]{background:#EAF4FB !important;color:#10243E !important;}
+[data-testid="stNumberInputStepUp"] svg,[data-testid="stNumberInputStepDown"] svg{fill:#10243E !important;color:#10243E !important;}
+[data-baseweb="popover"] :is(ul,li,[role="option"],[role="listbox"]){background:#FFFFFF !important;color:#10243E !important;}
+[data-baseweb="popover"] li:hover{background:#EAF4FB !important;}
+
+/* Tablas propias (siempre claras) */
+.tabla-wrap{overflow-x:auto;margin:.4rem 0 .9rem 0;}
+.tabla{width:100%;border-collapse:collapse;background:#FFFFFF;box-shadow:0 1px 4px rgba(11,37,69,.14);}
+.tabla th{background:#0B2545;color:#FFFFFF !important;padding:.5rem .7rem;text-align:left;font-size:.85rem;}
+.tabla td{background:#FFFFFF;color:#10243E !important;padding:.45rem .7rem;border-bottom:1px solid #E1ECF4;}
+.tabla tr:nth-child(even) td{background:#F3F8FC;}
 
 /* Barra lateral */
 section[data-testid="stSidebar"]{background:#0B2545 !important;}
 section[data-testid="stSidebar"] :is(p,span,label,h1,h2,h3,h4,li,div){color:#EAF4FB;}
-section[data-testid="stSidebar"] [data-baseweb="input"],
-section[data-testid="stSidebar"] [data-baseweb="select"]>div{border:2px solid #FFC400 !important;}
-section[data-testid="stSidebar"] [data-baseweb="input"] *,
-section[data-testid="stSidebar"] [data-baseweb="select"] *{color:#10243E !important;}
+section[data-testid="stSidebar"] :is([data-testid="stNumberInputContainer"],[data-testid="stTextInputRootElement"],[data-baseweb="select"]>div){border:2px solid #FFC400 !important;}
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] *{color:#10243E !important;}
 .logo{font-size:1.45rem;font-weight:800;color:#FFC400 !important;margin-bottom:.4rem;}
 .barra{background:rgba(255,255,255,.22);border-radius:20px;height:10px;margin:.2rem 0 .5rem 0;}
 .barra>div{background:#FFC400;height:10px;border-radius:20px;}
@@ -346,6 +364,11 @@ st.markdown(ESTILO, unsafe_allow_html=True)
 def banda(clase, titulo, etiqueta=""):
     etq = f'<span class="etq">{etiqueta}</span>' if etiqueta else ""
     st.markdown(f'<div class="banda b-{clase}"><span>{titulo}</span>{etq}</div>', unsafe_allow_html=True)
+
+
+def tabla(df, formatos=None):
+    html = df.to_html(index=False, escape=True, border=0, classes="tabla", formatters=formatos or {})
+    st.markdown(f'<div class="tabla-wrap">{html.replace(chr(10), "")}</div>', unsafe_allow_html=True)
 
 
 def kpi(clase, etiqueta, valor, nota="", extra=""):
@@ -504,7 +527,7 @@ with t2:
         estancias, s.pasillo_m, {"C8": s.calefaccion_elec, "C9": s.aire_acond, "C10": s.secadora})
     st.markdown("**Circuitos y puntos mínimos** (ITC-BT-25, simplificado)")
     if filas_circ:
-        st.dataframe(pd.DataFrame(filas_circ), hide_index=True)
+        tabla(pd.DataFrame(filas_circ))
         st.caption(f"Puntos de luz: {mec['puntos_luz']} · tomas C2: {mec['tomas_c2']} · "
                    f"tomas C5: {mec['tomas_c5']}. En salones y pasillos los mínimos suben con la "
                    "superficie: ajusta según la tabla 2 de la ITC-BT-25.")
@@ -577,11 +600,9 @@ with t4:
             st.warning("Aún no has puesto precios. Ve a la pestaña **3. Tarifas**.")
         if s.superficie <= 0 and n_estancias == 0:
             st.warning("Faltan la superficie y las estancias. Empieza en la pestaña **1. Estancias**.")
-        st.dataframe(pd.DataFrame(filas), hide_index=True, column_config={
-            "Cantidad": st.column_config.NumberColumn(format="%.2f"),
-            "Precio unit. (€)": st.column_config.NumberColumn(format="%.2f €"),
-            "Importe (€)": st.column_config.NumberColumn(format="%.2f €"),
-        })
+        tabla(pd.DataFrame(filas), {"Cantidad": lambda v: f"{v:,.2f}",
+                                    "Precio unit. (€)": lambda v: f"{v:,.2f} €",
+                                    "Importe (€)": lambda v: f"{v:,.2f} €"})
         base, iva, total_pres = totales(filas, s.tipo_iva)
         r1, r2, r3 = st.columns(3)
         with r1:
